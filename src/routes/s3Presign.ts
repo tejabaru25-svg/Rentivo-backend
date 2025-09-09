@@ -4,11 +4,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const router = express.Router();
 
+// Create S3 client with trimmed env vars to avoid newline issues
 const s3 = new S3Client({
-  region: process.env.AWS_REGION,
+  region: (process.env.AWS_REGION || "").trim(),
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ""
+    accessKeyId: (process.env.AWS_ACCESS_KEY_ID || "").trim(),
+    secretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY || "").trim()
   }
 });
 
@@ -23,11 +24,13 @@ router.get("/presign", async (req, res) => {
     }
 
     // Make filename safe
-    const safeFilename = filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+    const safeFilename = filename
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9._-]/g, "");
     const Key = `uploads/${Date.now()}_${safeFilename}`;
 
     const command = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET,
+      Bucket: (process.env.AWS_S3_BUCKET || "").trim(),
       Key,
       ContentType: contentType,
       ACL: "private"
