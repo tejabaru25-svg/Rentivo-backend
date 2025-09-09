@@ -4,8 +4,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "sh -c 'if ls src/*.ts > /dev/null 2>&1; then tsc; else echo \"no typescript files, skipping tsc\"; fi'",
-    "start": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "npx tsc -p tsconfig.json",
+    "start": "node dist/server.js",
     "prisma": "prisma"
   },
   "dependencies": {
