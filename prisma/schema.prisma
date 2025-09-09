@@ -19,13 +19,14 @@ model User {
   items       Item[]   @relation("owner_items")
   bookings    Booking[]
   payments    Payment[]
+  issues      Issue[]
   fcmToken    String?
 }
 
 model Item {
   id          String   @id @default(uuid())
   ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
+  owner       User     @relation("owner_items", fields: [ownerId], references: [id])
   title       String
   description String?
   category    String
@@ -54,16 +55,18 @@ model Booking {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  bookingId     String
-  booking       Booking  @relation(fields: [bookingId], references: [id])
-  amount        Int
-  insuranceFee  Int
-  platformFee   Int
+  id              String   @id @default(uuid())
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  amount          Int
+  insuranceFee    Int
+  platformFee     Int
   razorpayOrderId String?
   razorpayPaymentId String?
-  status        PaymentStatus @default(PENDING)
-  createdAt     DateTime @default(now())
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
 }
 
 model KYC {
@@ -78,14 +81,14 @@ model KYC {
 }
 
 model Issue {
-  id        String @id @default(uuid())
-  bookingId String?
-  userId    String
-  user      User   @relation(fields: [userId], references: [id])
+  id          String @id @default(uuid())
+  bookingId   String?
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
   description String
-  photos    String[]
-  status    String @default("OPEN")
-  createdAt DateTime @default(now())
+  photos      String[]
+  status      String @default("OPEN")
+  createdAt   DateTime @default(now())
 }
 
 enum UserRole {
