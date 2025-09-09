@@ -1,9 +1,14 @@
-import express from "express";
+import express, { Request } from "express";
 import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const router = express.Router();
 const upload = multer(); // handles multipart/form-data
+
+// Extend Request type to include file from multer
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 const s3 = new S3Client({
   region: (process.env.AWS_REGION || "").trim(),
@@ -14,7 +19,7 @@ const s3 = new S3Client({
 });
 
 // POST /api/upload/direct
-router.post("/direct", upload.single("file"), async (req, res) => {
+router.post("/direct", upload.single("file"), async (req: MulterRequest, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -44,3 +49,4 @@ router.post("/direct", upload.single("file"), async (req, res) => {
 });
 
 export default router;
+
