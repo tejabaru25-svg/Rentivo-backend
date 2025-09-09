@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  name        String?
-  email       String?  @unique
-  phone       String?  @unique
-  role        UserRole @default(RENTER)
-  kyc         KYC?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  items       Item[]   @relation("owner_items")
-  bookings    Booking[]
-  payments    Payment[]
-  issues      Issue[]
-  fcmToken    String?
+  id            String     @id @default(uuid())
+  name          String?
+  email         String?    @unique
+  phone         String?    @unique
+  passwordHash  String     // 🔑 required for login
+  role          UserRole   @default(RENTER)
+  kyc           KYC?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  items         Item[]     @relation("owner_items")
+  bookings      Booking[]
+  payments      Payment[]
+  issues        Issue[]
+  fcmToken      String?
+  isVerified    Boolean    @default(false) // 🔑 for email/phone verification
 }
 
 model Item {
@@ -40,44 +42,44 @@ model Item {
 }
 
 model Booking {
-  id          String   @id @default(uuid())
-  itemId      String
-  item        Item     @relation(fields: [itemId], references: [id])
-  renterId    String
-  renter      User     @relation(fields: [renterId], references: [id])
-  startDate   DateTime
-  endDate     DateTime
-  status      BookingStatus @default(PENDING)
+  id            String        @id @default(uuid())
+  itemId        String
+  item          Item          @relation(fields: [itemId], references: [id])
+  renterId      String
+  renter        User          @relation(fields: [renterId], references: [id])
+  startDate     DateTime
+  endDate       DateTime
+  status        BookingStatus @default(PENDING)
   handoverPhoto String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  payment     Payment?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  payment       Payment?
 }
 
 model Payment {
-  id              String   @id @default(uuid())
-  bookingId       String   @unique
-  booking         Booking  @relation(fields: [bookingId], references: [id])
-  amount          Int
-  insuranceFee    Int
-  platformFee     Int
-  razorpayOrderId String?
+  id                String   @id @default(uuid())
+  bookingId         String   @unique
+  booking           Booking  @relation(fields: [bookingId], references: [id])
+  amount            Int
+  insuranceFee      Int
+  platformFee       Int
+  razorpayOrderId   String?
   razorpayPaymentId String?
-  status          PaymentStatus @default(PENDING)
-  createdAt       DateTime @default(now())
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime @default(now())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id])
 }
 
 model KYC {
-  id        String @id @default(uuid())
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
-  panUrl    String?
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  panUrl          String?
   aadhaarFrontUrl String?
   aadhaarBackUrl  String?
-  verified  Boolean @default(false)
-  submittedAt DateTime?
+  verified        Boolean  @default(false)
+  submittedAt     DateTime?
 }
 
 model Issue {
