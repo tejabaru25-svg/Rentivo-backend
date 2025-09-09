@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String?
+  email       String?  @unique
+  phone       String?  @unique
+  role        UserRole @default(RENTER)
+  kyc         KYC?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       Item[]   @relation("owner_items")
+  bookings    Booking[]
+  payments    Payment[]
+  fcmToken    String?
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  title       String
+  description String?
+  category    String
+  pricePerDay Int
+  available   Boolean  @default(true)
+  photos      String[]
+  location    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bookings    Booking[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  itemId      String
+  item        Item     @relation(fields: [itemId], references: [id])
+  renterId    String
+  renter      User     @relation(fields: [renterId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  status      BookingStatus @default(PENDING)
+  handoverPhoto String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payment     Payment?
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+  amount        Int
+  insuranceFee  Int
+  platformFee   Int
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime @default(now())
+}
+
+model KYC {
+  id        String @id @default(uuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+  panUrl    String?
+  aadhaarFrontUrl String?
+  aadhaarBackUrl  String?
+  verified  Boolean @default(false)
+  submittedAt DateTime?
+}
+
+model Issue {
+  id        String @id @default(uuid())
+  bookingId String?
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  description String
+  photos    String[]
+  status    String @default("OPEN")
+  createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  RENTER
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  RETURNED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
