@@ -3,39 +3,32 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+
 import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
-import { authenticateToken } from "./authMiddleware";
-import itemRoutes from "./routes/items"; // ✅ added
+import itemRoutes from "./routes/items"; // ✅ items route
+import { authenticateToken } from "./routes/authMiddleware"; // ✅ fixed path
 
 const app = express();
 
-app.use(cors());            // enable CORS (later restrict to frontend domain)
+app.use(cors()); // enable CORS (later restrict to frontend domain)
 app.use(express.json());
 
 // Health check / root endpoint
 app.get("/", (_req, res) => res.json({ ok: true, version: "1.0" }));
 
-// Debug endpoint (temporary) - returns non-secret env info
-app.get("/debug/env", (_req, res) => {
-  return res.json({
-    AWS_REGION: process.env.AWS_REGION || null,
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || null
-  });
-});
-
 // Auth routes
 app.use("/api/auth", authRoutes);
 
-// Item routes ✅
+// Item routes
 app.use("/api/items", itemRoutes);
 
 // Protected test route (requires Authorization: Bearer <token>)
 app.get("/api/protected", authenticateToken, (req, res) => {
   return res.json({
     message: "You accessed a protected route!",
-    user: (req as any).user
+    user: (req as any).user,
   });
 });
 
@@ -44,6 +37,14 @@ app.use("/api/upload", s3Presign);
 
 // S3 direct upload route
 app.use("/api/upload", s3Direct);
+
+// Debug endpoint (temporary) - returns non-secret env info
+app.get("/debug/env", (_req, res) => {
+  return res.json({
+    AWS_REGION: process.env.AWS_REGION || null,
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || null,
+  });
+});
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
