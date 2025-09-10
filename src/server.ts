@@ -5,7 +5,8 @@ import express from "express";
 import cors from "cors";
 import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
-import authRoutes from "./routes/auth"; // ✅ new import
+import authRoutes from "./routes/auth";
+import { authenticateToken } from "./middleware/authMiddleware";
 
 const app = express();
 
@@ -23,8 +24,16 @@ app.get("/debug/env", (_req, res) => {
   });
 });
 
-// Auth routes ✅
+// Auth routes
 app.use("/api/auth", authRoutes);
+
+// Protected test route (requires Authorization: Bearer <token>)
+app.get("/api/protected", authenticateToken, (req, res) => {
+  return res.json({
+    message: "You accessed a protected route!",
+    user: (req as any).user
+  });
+});
 
 // S3 presign route
 app.use("/api/upload", s3Presign);
