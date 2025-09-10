@@ -69,4 +69,57 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/**
+ * Update item by ID (Owner only)
+ */
+router.put("/:id", authenticateToken, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, category, pricePerDay, photos, location, available } = req.body;
+
+    // Check item exists
+    const existing = await prisma.item.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: "Item not found" });
+
+    // Ensure only owner can update
+    if (existing.ownerId !== req.user.userId) {
+      return res.status(403).json({ error: "Not authorized to update this item" });
+    }
+
+    const updated = await prisma.item.update({
+      where: { id },
+      data: { title, description, category, pricePerDay, photos, location, available },
+    });
+
+    return res.json(updated);
+  } catch (err) {
+    console.error("Error updating item:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * Delete item by ID (Owner only)
+ */
+router.delete("/:id", authenticateToken, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.item.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: "Item not found" });
+
+    if (existing.ownerId !== req.user.userId) {
+      return res.status(403).json({ error: "Not authorized to delete this item" });
+    }
+
+    await prisma.item.delete({ where: { id } });
+
+    return res.json({ message: "Item deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting item:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
+
