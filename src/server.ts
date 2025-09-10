@@ -6,7 +6,8 @@ import cors from "cors";
 import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
-import { authenticateToken } from "./authMiddleware"; // ✅ fixed path
+import { authenticateToken } from "./authMiddleware";
+import itemRoutes from "./routes/items"; // ✅ added
 
 const app = express();
 
@@ -26,6 +27,9 @@ app.get("/debug/env", (_req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRoutes);
+
+// Item routes ✅
+app.use("/api/items", itemRoutes);
 
 // Protected test route (requires Authorization: Bearer <token>)
 app.get("/api/protected", authenticateToken, (req, res) => {
