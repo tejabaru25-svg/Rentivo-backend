@@ -6,7 +6,7 @@ import cors from "cors";
 import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
-import { authenticateToken } from "./middleware/authMiddleware";
+import { authenticateToken } from "./authMiddleware"; // ✅ fixed path
 
 const app = express();
 
