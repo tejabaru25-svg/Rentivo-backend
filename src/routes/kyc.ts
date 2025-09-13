@@ -4,23 +4,27 @@ import { authenticateToken } from "../authMiddleware";
 
 const router = Router();
 
+// Submit KYC document
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { user_id, document_type, document_url } = req.body;
+    const { userId, documentType, documentUrl } = req.body;
 
-    const kyc = await prisma.kyc.create({
+    const kyc = await prisma.kYC.create({
       data: {
-        user_id,
-        document_type,
-        document_url,
-        status: "pending",
+        userId,
+        documentType,
+        documentUrl,
+        status: "PENDING", // ✅ enum uppercase
       },
     });
 
-    return res.json({ message: "KYC submitted successfully", kycId: kyc.id });
+    return res.json({
+      message: "KYC submitted successfully",
+      kycId: kyc.id,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to upload KYC" });
+    return res.status(500).json({ error: "Failed to submit KYC" });
   }
 });
 
