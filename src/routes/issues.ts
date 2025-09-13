@@ -4,20 +4,24 @@ import { authenticateToken } from "../authMiddleware";
 
 const router = Router();
 
+// Report an issue
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { user_id, booking_id, description } = req.body;
+    const { userId, bookingId, description } = req.body;
 
     const issue = await prisma.issue.create({
       data: {
-        user_id,
-        booking_id,
+        userId,
+        bookingId,
         description,
-        status: "open",
+        status: "OPEN", // ✅ enum uppercase
       },
     });
 
-    return res.json({ message: "Issue reported successfully", issueId: issue.id });
+    return res.json({
+      message: "Issue reported successfully",
+      issueId: issue.id,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Failed to report issue" });
