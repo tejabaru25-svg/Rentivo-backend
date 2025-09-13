@@ -6,7 +6,22 @@ import { PrismaClient } from "@prisma/client";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret"; // Make sure to set JWT_SECRET in Render
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret"; // ⚠️ Make sure JWT_SECRET is set in Render
+
+// -------------------
+// Debug Route (to view all users)
+// -------------------
+router.get("/debug", async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, phone: true, createdAt: true }
+    });
+    return res.json(users);
+  } catch (err: any) {
+    console.error("Debug error:", err);
+    return res.status(500).json({ error: "Debug failed" });
+  }
+});
 
 // -------------------
 // Signup Route
@@ -49,7 +64,7 @@ router.post("/signup", async (req, res) => {
     return res.json({ message: "Signup successful", userId: user.id });
   } catch (err: any) {
     console.error("Signup error:", err);
-    return res.status(500).json({ error: "Signup failed" });
+    return res.status(500).json({ error: "Signup failed", details: err.message });
   }
 });
 
@@ -67,13 +82,13 @@ router.post("/login", async (req, res) => {
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: "Invalid credentials (user not found)" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
 
     // Generate JWT
@@ -86,7 +101,7 @@ router.post("/login", async (req, res) => {
     return res.json({ message: "Login successful", token });
   } catch (err: any) {
     console.error("Login error:", err);
-    return res.status(500).json({ error: "Login failed" });
+    return res.status(500).json({ error: "Login failed", details: err.message });
   }
 });
 
