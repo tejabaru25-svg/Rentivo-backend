@@ -12,7 +12,7 @@ import bookingRoutes from "./routes/bookings";
 import paymentRoutes from "./routes/payments";
 import kycRoutes from "./routes/kyc";
 import issueRoutes from "./routes/issues";
-import { authenticateToken } from "./authMiddleware"; // ✅ fixed path
+import { authenticateToken } from "./authMiddleware";
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
 
-// Protected test route (requires Authorization: Bearer <token>)
+// Protected test route
 app.get("/api/protected", authenticateToken, (req, res) => {
   return res.json({
     message: "You accessed a protected route!",
@@ -42,13 +42,11 @@ app.get("/api/protected", authenticateToken, (req, res) => {
   });
 });
 
-// S3 presign route
+// S3 routes
 app.use("/api/upload", s3Presign);
-
-// S3 direct upload route
 app.use("/api/upload", s3Direct);
 
-// Debug endpoint (temporary) - returns non-secret env info
+// Debug endpoint (temporary)
 app.get("/debug/env", (_req, res) => {
   return res.json({
     AWS_REGION: process.env.AWS_REGION || null,
@@ -56,7 +54,11 @@ app.get("/debug/env", (_req, res) => {
   });
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Rentivo backend listening on ${port}`);
+// ✅ FIX: Ensure Render detects the correct port
+const port = Number(process.env.PORT) || 4000;
+
+console.log("⚡ Preparing to start Rentivo backend...");
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`✅ Rentivo backend listening on port: ${port}`);
 });
