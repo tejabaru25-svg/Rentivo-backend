@@ -57,7 +57,7 @@ router.post("/signup", async (req, res) => {
         name,
         email,
         phone,
-        passwordHash: hash,
+        password: hash, // ✅ changed from passwordHash → password
       },
     });
 
@@ -86,7 +86,7 @@ router.post("/login", async (req, res) => {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
