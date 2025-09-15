@@ -57,7 +57,7 @@ router.post("/signup", async (req, res) => {
         name,
         email,
         phone,
-        password: hash, // ✅ changed from passwordHash → password
+        passwordhash: hash, // ✅ match Supabase column
       },
     });
 
@@ -86,7 +86,7 @@ router.post("/login", async (req, res) => {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ match Supabase column
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
