@@ -51,8 +51,8 @@ app.get("/debug/env", (_req, res) => {
   });
 });
 
-// ✅ Correct port binding for Render
+// ✅ Correct port binding for Render (no hostname argument)
 const port = process.env.PORT || 4000;
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`🚀 Rentivo backend listening on port: ${port}`);
 });
