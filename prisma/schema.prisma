@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id         String     @id @default(uuid())
-  name       String?
-  email      String?    @unique
-  phone      String?    @unique
-  password   String     // ✅ changed from passwordHash → password
-  role       UserRole   @default(RENTER)
-  kyc        KYC?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  items      Item[]     @relation("owner_items")
-  bookings   Booking[]
-  payments   Payment[]
-  issues     Issue[]
-  fcmToken   String?
-  isVerified Boolean    @default(false) // 🔑 for email/phone verification
+  id          String     @id @default(uuid())
+  name        String?
+  email       String?    @unique
+  phone       String?    @unique
+  passwordhash String    // ✅ match Supabase column (lowercase)
+  role        UserRole   @default(RENTER)
+  kyc         KYC?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  items       Item[]     @relation("owner_items")
+  bookings    Booking[]
+  payments    Payment[]
+  issues      Issue[]
+  fcmToken    String?
+  isVerified  Boolean    @default(false) // for email/phone verification
 }
 
 model Item {
@@ -112,3 +112,4 @@ enum PaymentStatus {
   PAID
   REFUNDED
 }
+
