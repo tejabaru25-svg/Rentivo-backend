@@ -14,7 +14,16 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret"; // ⚠️ Make s
 router.get("/debug", async (_req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, phone: true, createdAt: true }
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        phone: true, 
+        createdat: true,   // ✅ lowercase to match schema
+        updatedat: true,   // ✅ lowercase to match schema
+        isverified: true,  // ✅ lowercase to match schema
+        role: true 
+      }
     });
     return res.json(users);
   } catch (err: any) {
@@ -86,7 +95,7 @@ router.post("/login", async (req, res) => {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ match Supabase column
+    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ lowercase
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
