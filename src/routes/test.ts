@@ -4,14 +4,11 @@ import { sendSMS } from "../utils/sms";
 
 const router = express.Router();
 
-/**
- * Test Email Route
- * Open in browser: /api/test/email
- */
+// Test Email
 router.get("/email", async (_req, res) => {
   try {
     await sendEmail(
-      process.env.SMTP_USER!, // send to your own verified Gmail
+      process.env.EMAIL_FROM || "tejabaru25@gmail.com", 
       "Test Email from Rentivo",
       "<p>✅ This is a test email sent from Rentivo backend 🚀</p>"
     );
@@ -22,14 +19,11 @@ router.get("/email", async (_req, res) => {
   }
 });
 
-/**
- * Test SMS Route
- * Open in browser: /api/test/sms
- */
+// Test SMS
 router.get("/sms", async (_req, res) => {
   try {
     await sendSMS(
-      "+919502902546", // your verified mobile number in Twilio
+      "+919502902546", // your verified Twilio number
       "✅ Test SMS from Rentivo backend 🚀"
     );
     return res.json({ success: true, message: "Test SMS sent!" });
