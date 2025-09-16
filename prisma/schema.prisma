@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  name        String?
-  email       String?    @unique
-  phone       String?    @unique
-  passwordhash String    // ✅ match Supabase column (lowercase)
-  role        UserRole   @default(RENTER)
-  kyc         KYC?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  items       Item[]     @relation("owner_items")
-  bookings    Booking[]
-  payments    Payment[]
-  issues      Issue[]
-  fcmToken    String?
-  isVerified  Boolean    @default(false) // for email/phone verification
+  id           String     @id @default(uuid())
+  name         String?
+  email        String?    @unique
+  phone        String?    @unique
+  passwordhash String     // ✅ match Supabase column
+  role         UserRole   @default(RENTER)
+  kyc          KYC?
+  createdat    DateTime   @default(now())   // ✅ lowercase to match Supabase
+  updatedat    DateTime   @default(now())   // ✅ lowercase to match Supabase
+  items        Item[]     @relation("owner_items")
+  bookings     Booking[]
+  payments     Payment[]
+  issues       Issue[]
+  fcmtoken     String?    // ✅ lowercase to match Supabase
+  isverified   Boolean    @default(false)   // ✅ lowercase to match Supabase
 }
 
 model Item {
@@ -36,8 +36,8 @@ model Item {
   available   Boolean  @default(true)
   photos      String[]
   location    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdat   DateTime @default(now())
+  updatedat   DateTime @default(now())
   bookings    Booking[]
 }
 
@@ -51,8 +51,8 @@ model Booking {
   endDate       DateTime
   status        BookingStatus @default(PENDING)
   handoverPhoto String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdat     DateTime      @default(now())
+  updatedat     DateTime      @default(now())
   payment       Payment?
 }
 
@@ -66,7 +66,7 @@ model Payment {
   razorpayOrderId   String?
   razorpayPaymentId String?
   status            PaymentStatus @default(PENDING)
-  createdAt         DateTime @default(now())
+  createdat         DateTime @default(now())
   userId            String?
   user              User?     @relation(fields: [userId], references: [id])
 }
@@ -83,14 +83,14 @@ model KYC {
 }
 
 model Issue {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   bookingId   String?
   userId      String
-  user        User   @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
   description String
   photos      String[]
-  status      String @default("OPEN")
-  createdAt   DateTime @default(now())
+  status      String   @default("OPEN")
+  createdat   DateTime @default(now())
 }
 
 enum UserRole {
@@ -112,4 +112,3 @@ enum PaymentStatus {
   PAID
   REFUNDED
 }
-
