@@ -1,23 +1,18 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.sendgrid.net",
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false, // TLS (STARTTLS)
-  auth: {
-    user: process.env.SMTP_USER || "apikey",
-    pass: process.env.SMTP_PASS!,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function sendEmail(to: string, subject: string, html: string) {
-  const fromAddress = process.env.EMAIL_FROM || `Rentivo <noreply@rentivo.com>`;
-  const info = await transporter.sendMail({
-    from: fromAddress,
+  const fromAddress = process.env.EMAIL_FROM || "Rentivo <tejabaru25@gmail.com>";
+
+  const msg = {
     to,
+    from: fromAddress,
     subject,
     html,
-  });
-  console.log("✅ SendGrid Email sent:", info.messageId);
-  return info;
+  };
+
+  const res = await sgMail.send(msg);
+  console.log("✅ SendGrid API email sent:", res[0].statusCode);
+  return res;
 }
