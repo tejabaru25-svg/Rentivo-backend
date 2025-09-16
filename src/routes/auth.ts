@@ -66,8 +66,8 @@ router.post("/signup", async (req, res) => {
         name,
         email,
         phone,
-        passwordhash: hash,  // ✅ match Supabase column
-        role: "RENTER",      // ✅ default role since role is String now
+        passwordhash: hash,  // ✅ lowercase column
+        role: "RENTER",      // ✅ default role as plain String
       },
     });
 
@@ -96,4 +96,23 @@ router.post("/login", async (req, res) => {
     }
 
     // Check password
-    const isMatch = await bcrypt
+    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ lowercase
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid credentials (wrong password)" });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user.id, role: user.role }, // ✅ role is String
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({ message: "Login successful", token });
+  } catch (err: any) {
+    console.error("Login error:", err);
+    return res.status(500).json({ error: "Login failed", details: err.message });
+  }
+});
+
+export default router;
