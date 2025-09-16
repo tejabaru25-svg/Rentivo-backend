@@ -1,34 +1,42 @@
-import { Router } from "express";
-import prisma from "../prismaClient";
-import { authenticateToken } from "../authMiddleware";
+import express from "express";
+import { PrismaClient } from "@prisma/client";
 
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
-// Record a payment
-router.post("/", authenticateToken, async (req, res) => {
+// Create payment
+router.post("/", async (req, res) => {
   try {
-    const { bookingId, amount, insuranceFee, platformFee, razorpayOrderId, razorpayPaymentId, userId } = req.body;
+    const { bookingid, userid, amount, insurancefee, platformfee } = req.body;
 
     const payment = await prisma.payment.create({
       data: {
-        bookingId,
+        bookingid,
+        userid,
         amount,
-        insuranceFee,
-        platformFee,
-        razorpayOrderId,
-        razorpayPaymentId,
-        status: "PENDING", // ✅ enum from schema
-        userId,
+        insurancefee,
+        platformfee,
+        status: "PENDING",
       },
     });
 
-    return res.json({
-      message: "Payment recorded successfully",
-      paymentId: payment.id,
+    return res.json(payment);
+  } catch (err: any) {
+    console.error("Payment create error:", err);
+    return res.status(500).json({ error: "Payment failed", details: err.message });
+  }
+});
+
+// Get all payments
+router.get("/", async (_req, res) => {
+  try {
+    const payments = await prisma.payment.findMany({
+      include: { booking: true, user: true },
     });
-  } catch (error) {
-    console.error("Payment error:", error);
-    return res.status(500).json({ error: "Failed to record payment" });
+    return res.json(payments);
+  } catch (err: any) {
+    console.error("Payment fetch error:", err);
+    return res.status(500).json({ error: "Failed to fetch payments", details: err.message });
   }
 });
 
