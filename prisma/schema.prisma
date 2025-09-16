@@ -27,12 +27,12 @@ model User {
 
 model Item {
   id          String   @id @default(uuid())
-  ownerId     String
-  owner       User     @relation("owner_items", fields: [ownerId], references: [id])
+  ownerid     String
+  owner       User     @relation("owner_items", fields: [ownerid], references: [id])
   title       String
   description String?
   category    String
-  pricePerDay Int
+  priceperday Int
   available   Boolean  @default(true)
   photos      String[]
   location    String
@@ -42,67 +42,53 @@ model Item {
 }
 
 model Booking {
-  id            String        @id @default(uuid())
-  itemId        String
-  item          Item          @relation(fields: [itemId], references: [id])
-  renterId      String
-  renter        User          @relation(fields: [renterId], references: [id])
-  startDate     DateTime
-  endDate       DateTime
-  status        BookingStatus @default(PENDING)
-  handoverPhoto String?
-  createdat     DateTime      @default(now())
-  updatedat     DateTime      @default(now())
+  id            String  @id @default(uuid())
+  itemid        String
+  item          Item    @relation(fields: [itemid], references: [id])
+  renterid      String
+  renter        User    @relation(fields: [renterid], references: [id])
+  startdate     DateTime
+  enddate       DateTime
+  status        String  @default("PENDING")
+  handoverphoto String?
+  createdat     DateTime @default(now())
+  updatedat     DateTime @default(now())
   payment       Payment?
 }
 
 model Payment {
-  id                String   @id @default(uuid())
-  bookingId         String   @unique
-  booking           Booking  @relation(fields: [bookingId], references: [id])
+  id                String  @id @default(uuid())
+  bookingid         String  @unique
+  booking           Booking @relation(fields: [bookingid], references: [id])
   amount            Int
-  insuranceFee      Int
-  platformFee       Int
-  razorpayOrderId   String?
-  razorpayPaymentId String?
-  status            PaymentStatus @default(PENDING)
+  insurancefee      Int
+  platformfee       Int
+  razorpayorderid   String?
+  razorpaypaymentid String?
+  status            String  @default("PENDING")
   createdat         DateTime @default(now())
-  userId            String?
-  user              User?     @relation(fields: [userId], references: [id])
+  userid            String?
+  user              User?    @relation(fields: [userid], references: [id])
 }
 
 model KYC {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
-  panUrl          String?
-  aadhaarFrontUrl String?
-  aadhaarBackUrl  String?
-  verified        Boolean  @default(false)
-  submittedAt     DateTime?
+  id              String @id @default(uuid())
+  userid          String @unique
+  user            User   @relation(fields: [userid], references: [id])
+  panurl          String?
+  aadhaarfronturl String?
+  aadhaarbackurl  String?
+  verified        Boolean @default(false)
+  submittedat     DateTime?
 }
 
 model Issue {
   id          String   @id @default(uuid())
-  bookingId   String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  bookingid   String?
+  userid      String
+  user        User     @relation(fields: [userid], references: [id])
   description String
   photos      String[]
   status      String   @default("OPEN")
   createdat   DateTime @default(now())
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  ACTIVE
-  RETURNED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  REFUNDED
 }
