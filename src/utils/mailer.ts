@@ -3,7 +3,7 @@ import sgMail from "@sendgrid/mail";
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function sendEmail(to: string, subject: string, html: string) {
-  const fromAddress = process.env.EMAIL_FROM || "Rentivo <tejabaru25@gmail.com>";
+  const fromAddress = process.env.EMAIL_FROM || "Rentivo <noreply@rentivo.com>";
 
   const msg = {
     to,
