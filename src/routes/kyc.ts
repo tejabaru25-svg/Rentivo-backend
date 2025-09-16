@@ -1,32 +1,40 @@
-import { Router } from "express";
-import prisma from "../prismaClient";
-import { authenticateToken } from "../authMiddleware";
+import express from "express";
+import { PrismaClient } from "@prisma/client";
 
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
-// Submit KYC documents
-router.post("/", authenticateToken, async (req, res) => {
+// Submit KYC
+router.post("/", async (req, res) => {
   try {
-    const { userId, panUrl, aadhaarFrontUrl, aadhaarBackUrl } = req.body;
+    const { userid, panurl, aadhaarfronturl, aadhaarbackurl } = req.body;
 
     const kyc = await prisma.kYC.create({
       data: {
-        userId,
-        panUrl,
-        aadhaarFrontUrl,
-        aadhaarBackUrl,
+        userid,
+        panurl,
+        aadhaarfronturl,
+        aadhaarbackurl,
         verified: false,
-        submittedAt: new Date(),
+        submittedat: new Date(),
       },
     });
 
-    return res.json({
-      message: "KYC submitted successfully",
-      kycId: kyc.id,
-    });
-  } catch (error) {
-    console.error("KYC error:", error);
-    return res.status(500).json({ error: "Failed to submit KYC" });
+    return res.json(kyc);
+  } catch (err: any) {
+    console.error("KYC create error:", err);
+    return res.status(500).json({ error: "KYC failed", details: err.message });
+  }
+});
+
+// Get all KYC
+router.get("/", async (_req, res) => {
+  try {
+    const kycs = await prisma.kYC.findMany({ include: { user: true } });
+    return res.json(kycs);
+  } catch (err: any) {
+    console.error("KYC fetch error:", err);
+    return res.status(500).json({ error: "Failed to fetch KYC", details: err.message });
   }
 });
 
