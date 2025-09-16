@@ -1,6 +1,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { sendEmail } from "../utils/mailer";
+import { sendSMS } from "../utils/sms";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -26,10 +27,12 @@ router.post("/", async (req, res) => {
     });
 
     // -------------------
-    // Send Email Notifications
+    // Send Notifications
     // -------------------
     const renterEmail = booking.renter.email;
+    const renterPhone = booking.renter.phone;
     const ownerEmail = booking.item.owner.email;
+    const ownerPhone = booking.item.owner.phone;
 
     // Email to renter
     if (renterEmail) {
@@ -48,7 +51,15 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // Email to item owner
+    // SMS to renter
+    if (renterPhone) {
+      await sendSMS(
+        renterPhone,
+        `✅ Rentivo Booking Confirmed!\nItem: ${booking.item.title}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
+      );
+    }
+
+    // Email to owner
     if (ownerEmail) {
       await sendEmail(
         ownerEmail,
@@ -62,6 +73,14 @@ router.post("/", async (req, res) => {
         <br/>
         <p>Login to Rentivo to manage your booking 🚀</p>
         `
+      );
+    }
+
+    // SMS to owner
+    if (ownerPhone) {
+      await sendSMS(
+        ownerPhone,
+        `📢 Rentivo: Your item "${booking.item.title}" was booked!\nRenter: ${booking.renter.name || "User"}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
       );
     }
 
