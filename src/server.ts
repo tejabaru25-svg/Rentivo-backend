@@ -16,14 +16,22 @@ import { authenticateToken } from "./authMiddleware";
 
 const app = express();
 
+// -------------------
 // Middleware
-app.use(cors()); // later you can restrict to frontend domain
+// -------------------
+app.use(cors()); // TODO: restrict to frontend domain later
 app.use(express.json());
 
-// Health check / root endpoint
-app.get("/", (_req, res) => res.json({ ok: true, version: "1.0" }));
+// -------------------
+// Health Check / Root
+// -------------------
+app.get("/", (_req, res) => {
+  return res.json({ ok: true, version: "1.0" });
+});
 
+// -------------------
 // Routes
+// -------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
@@ -31,7 +39,9 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
 
-// Protected test route (requires Authorization: Bearer <token>)
+// -------------------
+// Protected Test Route
+// -------------------
 app.get("/api/protected", authenticateToken, (req, res) => {
   return res.json({
     message: "You accessed a protected route!",
@@ -39,11 +49,15 @@ app.get("/api/protected", authenticateToken, (req, res) => {
   });
 });
 
-// Upload routes
+// -------------------
+// Upload Routes
+// -------------------
 app.use("/api/upload", s3Presign);
 app.use("/api/upload", s3Direct);
 
-// Debug endpoint (temporary) - returns non-secret env info
+// -------------------
+// Debug (non-secret env info)
+// -------------------
 app.get("/debug/env", (_req, res) => {
   return res.json({
     AWS_REGION: process.env.AWS_REGION || null,
@@ -51,7 +65,9 @@ app.get("/debug/env", (_req, res) => {
   });
 });
 
-// ✅ Correct port binding for Render (no hostname argument)
+// -------------------
+// Start Server
+// -------------------
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`🚀 Rentivo backend listening on port: ${port}`);
