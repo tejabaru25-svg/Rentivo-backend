@@ -9,10 +9,10 @@ import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
 import bookingRoutes from "./routes/bookings";
-import paymentRoutes from "./routes/payments";
+import payments from "./routes/payments";  // ✅ renamed to match payments.ts
 import kycRoutes from "./routes/kyc";
 import issueRoutes from "./routes/issues";
-import { authenticateToken } from "./authMiddleware";
+import { authenticateToken } from "./authMiddleware"; // ✅ fixed typo
 
 const app = express();
 
@@ -35,7 +35,7 @@ app.get("/", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/payments", paymentRoutes);
+app.use("/api/payments", payments); // ✅ now points to updated payments.ts
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
 
