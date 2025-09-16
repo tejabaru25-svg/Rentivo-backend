@@ -11,7 +11,7 @@ const router = express.Router();
 router.get("/email", async (req, res) => {
   try {
     await sendEmail(
-      process.env.SMTP_USER!, // ✅ your Gmail account from env
+      process.env.SMTP_USER!, // ✅ your Gmail account
       "Test Email from Rentivo",
       "<p>✅ This is a test email sent from Rentivo backend 🚀</p>"
     );
@@ -29,7 +29,7 @@ router.get("/email", async (req, res) => {
 router.get("/sms", async (req, res) => {
   try {
     await sendSMS(
-      "+919502902546", // ✅ your verified Twilio number
+      "+919502902546", // ✅ recipient: your verified number
       "✅ Test SMS from Rentivo backend 🚀"
     );
     return res.json({ success: true, message: "Test SMS sent!" });
