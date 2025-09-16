@@ -51,12 +51,16 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // SMS to renter
+    // SMS to renter (safe fallback)
     if (renterPhone) {
-      await sendSMS(
-        renterPhone,
-        `✅ Rentivo Booking Confirmed!\nItem: ${booking.item.title}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
-      );
+      try {
+        await sendSMS(
+          renterPhone,
+          `✅ Rentivo Booking Confirmed!\nItem: ${booking.item.title}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
+        );
+      } catch (smsErr) {
+        console.warn("⚠️ SMS to renter failed:", smsErr);
+      }
     }
 
     // Email to owner
@@ -76,12 +80,16 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // SMS to owner
+    // SMS to owner (safe fallback)
     if (ownerPhone) {
-      await sendSMS(
-        ownerPhone,
-        `📢 Rentivo: Your item "${booking.item.title}" was booked!\nRenter: ${booking.renter.name || "User"}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
-      );
+      try {
+        await sendSMS(
+          ownerPhone,
+          `📢 Rentivo: Your item "${booking.item.title}" was booked!\nRenter: ${booking.renter.name || "User"}\nFrom: ${booking.startdate.toDateString()}\nTo: ${booking.enddate.toDateString()}`
+        );
+      } catch (smsErr) {
+        console.warn("⚠️ SMS to owner failed:", smsErr);
+      }
     }
 
     // -------------------
