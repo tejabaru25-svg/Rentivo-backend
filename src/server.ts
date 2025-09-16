@@ -9,10 +9,11 @@ import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
 import bookingRoutes from "./routes/bookings";
-import payments from "./routes/payments";  // ✅ renamed to match payments.ts
+import payments from "./routes/payments";   // ✅ payments routes
 import kycRoutes from "./routes/kyc";
 import issueRoutes from "./routes/issues";
-import { authenticateToken } from "./authMiddleware"; // ✅ fixed typo
+import testRoutes from "./routes/test";     // ✅ added test routes
+import { authenticateToken } from "./authMiddleware";
 
 const app = express();
 
@@ -35,9 +36,10 @@ app.get("/", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/payments", payments); // ✅ now points to updated payments.ts
+app.use("/api/payments", payments);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
+app.use("/api/test", testRoutes); // ✅ test email + sms routes
 
 // -------------------
 // Protected Test Route
