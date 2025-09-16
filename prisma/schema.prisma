@@ -12,17 +12,17 @@ model User {
   name         String?
   email        String?    @unique
   phone        String?    @unique
-  passwordhash String     // ✅ match Supabase column
-  role         String     @default("RENTER")  // ✅ plain text instead of enum
+  passwordhash String
+  role         String     @default("RENTER")
   kyc          KYC?
-  createdat    DateTime   @default(now())     // ✅ lowercase to match Supabase
-  updatedat    DateTime   @default(now())     // ✅ lowercase to match Supabase
+  createdat    DateTime   @default(now())
+  updatedat    DateTime   @default(now())
   items        Item[]     @relation("owner_items")
   bookings     Booking[]
   payments     Payment[]
   issues       Issue[]
-  fcmtoken     String?    
-  isverified   Boolean    @default(false)     // ✅ lowercase to match Supabase
+  fcmtoken     String?
+  isverified   Boolean    @default(false)
 }
 
 model Item {
@@ -62,4 +62,47 @@ model Payment {
   booking           Booking  @relation(fields: [bookingId], references: [id])
   amount            Int
   insuranceFee      Int
-  platformFee
+  platformFee       Int
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  status            PaymentStatus @default(PENDING)
+  createdat         DateTime @default(now())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id])
+}
+
+model KYC {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  panUrl          String?
+  aadhaarFrontUrl String?
+  aadhaarBackUrl  String?
+  verified        Boolean  @default(false)
+  submittedAt     DateTime?
+}
+
+model Issue {
+  id          String   @id @default(uuid())
+  bookingId   String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  description String
+  photos      String[]
+  status      String   @default("OPEN")
+  createdat   DateTime @default(now())
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  RETURNED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
