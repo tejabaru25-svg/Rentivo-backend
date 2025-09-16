@@ -1,7 +1,9 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
-import { authenticateToken } from "../authMiddleware";   // ✅ Protect routes
-import { sendPushNotification } from "../utils/firebase"; // ✅ Push notifications
+import { authenticateToken } from "../authMiddleware";
+import { sendPushNotification } from "../utils/firebase";
+import { sendEmail } from "../utils/mailer";     // ✅ Email helper
+import { sendSMS } from "../utils/sms";          // ✅ SMS helper
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -24,24 +26,46 @@ router.post("/", authenticateToken, async (req, res) => {
       },
     });
 
-    // Fetch item + owner for push notification
+    // Fetch item + owner for notifications
     const item = await prisma.item.findUnique({
       where: { id: itemid },
       include: { owner: true },
     });
 
-    if (item?.owner?.fcmtoken) {
-      await sendPushNotification(
-        item.owner.fcmtoken,
-        "New Booking",
-        `Your item "${item.title}" has been booked!`
-      );
+    if (item?.owner) {
+      // ✅ Push Notification
+      if (item.owner.fcmtoken) {
+        await sendPushNotification(
+          item.owner.fcmtoken,
+          "New Booking",
+          `Your item "${item.title}" has been booked!`
+        );
+      }
+
+      // ✅ Email Notification
+      if (item.owner.email) {
+        await sendEmail(
+          item.owner.email,
+          "New Booking Alert",
+          `<p>Your item <b>${item.title}</b> has been booked by a renter.</p>`
+        );
+      }
+
+      // ✅ SMS Notification
+      if (item.owner.phone) {
+        await sendSMS(
+          item.owner.phone,
+          `Your item "${item.title}" has been booked on Rentivo!`
+        );
+      }
     }
 
     return res.json(booking);
   } catch (err: any) {
     console.error("Booking create error:", err);
-    return res.status(500).json({ error: "Booking failed", details: err.message });
+    return res
+      .status(500)
+      .json({ error: "Booking failed", details: err.message });
   }
 });
 
@@ -60,7 +84,9 @@ router.get("/", authenticateToken, async (req, res) => {
     return res.json(bookings);
   } catch (err: any) {
     console.error("Booking fetch error:", err);
-    return res.status(500).json({ error: "Failed to fetch bookings", details: err.message });
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch bookings", details: err.message });
   }
 });
 
