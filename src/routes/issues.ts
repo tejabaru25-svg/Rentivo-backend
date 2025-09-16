@@ -1,31 +1,40 @@
-import { Router } from "express";
-import prisma from "../prismaClient";
-import { authenticateToken } from "../authMiddleware";
+import express from "express";
+import { PrismaClient } from "@prisma/client";
 
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
-// Report an issue
-router.post("/", authenticateToken, async (req, res) => {
+// Create issue
+router.post("/", async (req, res) => {
   try {
-    const { userId, bookingId, description, photos } = req.body;
+    const { userid, bookingid, description, photos } = req.body;
 
     const issue = await prisma.issue.create({
       data: {
-        userId,
-        bookingId,
+        userid,
+        bookingid,
         description,
         photos,
-        status: "OPEN", // ✅ matches schema default
       },
     });
 
-    return res.json({
-      message: "Issue reported successfully",
-      issueId: issue.id,
+    return res.json(issue);
+  } catch (err: any) {
+    console.error("Issue create error:", err);
+    return res.status(500).json({ error: "Issue creation failed", details: err.message });
+  }
+});
+
+// Get all issues
+router.get("/", async (_req, res) => {
+  try {
+    const issues = await prisma.issue.findMany({
+      include: { user: true },
     });
-  } catch (error) {
-    console.error("Issue error:", error);
-    return res.status(500).json({ error: "Failed to report issue" });
+    return res.json(issues);
+  } catch (err: any) {
+    console.error("Issue fetch error:", err);
+    return res.status(500).json({ error: "Failed to fetch issues", details: err.message });
   }
 });
 
