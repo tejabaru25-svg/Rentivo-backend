@@ -17,7 +17,7 @@ model User {
   role         String     @default("RENTER")
   kyc          KYC?
   createdat    DateTime   @default(now())
-  updatedat    DateTime   @updatedAt      // ✅ auto-update on changes
+  updatedat    DateTime   @updatedAt
   items        Item[]     @relation("owner_items")
   bookings     Booking[]
   payments     Payment[]
@@ -38,7 +38,7 @@ model Item {
   photos      String[]
   location    String
   createdat   DateTime @default(now())
-  updatedat   DateTime @updatedAt      // ✅ auto-update
+  updatedat   DateTime @updatedAt
   bookings    Booking[]
 }
 
@@ -53,7 +53,7 @@ model Booking {
   status        String   @default("PENDING")
   handoverphoto String?
   createdat     DateTime @default(now())
-  updatedat     DateTime @updatedAt      // ✅ auto-update
+  updatedat     DateTime @updatedAt
   payment       Payment?
 }
 
@@ -61,6 +61,8 @@ model Payment {
   id                String   @id @default(uuid())
   bookingid         String   @unique
   booking           Booking  @relation(fields: [bookingid], references: [id])
+  userid            String?
+  user              User?    @relation(fields: [userid], references: [id])
   amount            Int
   insurancefee      Int
   platformfee       Int
@@ -68,8 +70,6 @@ model Payment {
   razorpaypaymentid String?
   status            String   @default("PENDING")
   createdat         DateTime @default(now())
-  userid            String?
-  user              User?    @relation(fields: [userid], references: [id])
 }
 
 model KYC {
