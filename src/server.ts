@@ -12,7 +12,7 @@ import bookingRoutes from "./routes/bookings";
 import payments from "./routes/payments";   // ✅ payments routes
 import kycRoutes from "./routes/kyc";
 import issueRoutes from "./routes/issues";
-import testRoutes from "./routes/test";     // ✅ added test routes
+import testRoutes from "./routes/test";     // ✅ test email + sms routes
 import { authenticateToken } from "./authMiddleware";
 
 const app = express();
@@ -31,7 +31,7 @@ app.get("/", (_req, res) => {
 });
 
 // -------------------
-// Routes
+// API Routes
 // -------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
