@@ -6,12 +6,12 @@ const router = express.Router();
 
 /**
  * Test Email Route
- * Opens in browser: /api/test/email
+ * Open in browser: /api/test/email
  */
-router.get("/email", async (req, res) => {
+router.get("/email", async (_req, res) => {
   try {
     await sendEmail(
-      process.env.SMTP_USER!, // ✅ your Gmail account from env
+      process.env.SMTP_USER!, // send to your own verified Gmail
       "Test Email from Rentivo",
       "<p>✅ This is a test email sent from Rentivo backend 🚀</p>"
     );
@@ -24,12 +24,12 @@ router.get("/email", async (req, res) => {
 
 /**
  * Test SMS Route
- * Opens in browser: /api/test/sms
+ * Open in browser: /api/test/sms
  */
-router.get("/sms", async (req, res) => {
+router.get("/sms", async (_req, res) => {
   try {
     await sendSMS(
-      "+919502902546", // ✅ recipient: your verified personal number
+      "+919502902546", // your verified mobile number in Twilio
       "✅ Test SMS from Rentivo backend 🚀"
     );
     return res.json({ success: true, message: "Test SMS sent!" });
