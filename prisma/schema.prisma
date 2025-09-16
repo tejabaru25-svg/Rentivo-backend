@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"   // ✅ force binary engine for Render (fix build error)
 }
 
 datasource db {
@@ -42,14 +43,14 @@ model Item {
 }
 
 model Booking {
-  id            String  @id @default(uuid())
+  id            String   @id @default(uuid())
   itemid        String
-  item          Item    @relation(fields: [itemid], references: [id])
+  item          Item     @relation(fields: [itemid], references: [id])
   renterid      String
-  renter        User    @relation(fields: [renterid], references: [id])
+  renter        User     @relation(fields: [renterid], references: [id])
   startdate     DateTime
   enddate       DateTime
-  status        String  @default("PENDING")
+  status        String   @default("PENDING")
   handoverphoto String?
   createdat     DateTime @default(now())
   updatedat     DateTime @default(now())
@@ -57,28 +58,28 @@ model Booking {
 }
 
 model Payment {
-  id                String  @id @default(uuid())
-  bookingid         String  @unique
-  booking           Booking @relation(fields: [bookingid], references: [id])
+  id                String   @id @default(uuid())
+  bookingid         String   @unique
+  booking           Booking  @relation(fields: [bookingid], references: [id])
   amount            Int
   insurancefee      Int
   platformfee       Int
   razorpayorderid   String?
   razorpaypaymentid String?
-  status            String  @default("PENDING")
+  status            String   @default("PENDING")
   createdat         DateTime @default(now())
   userid            String?
   user              User?    @relation(fields: [userid], references: [id])
 }
 
 model KYC {
-  id              String @id @default(uuid())
-  userid          String @unique
-  user            User   @relation(fields: [userid], references: [id])
+  id              String   @id @default(uuid())
+  userid          String   @unique
+  user            User     @relation(fields: [userid], references: [id])
   panurl          String?
   aadhaarfronturl String?
   aadhaarbackurl  String?
-  verified        Boolean @default(false)
+  verified        Boolean  @default(false)
   submittedat     DateTime?
 }
 
