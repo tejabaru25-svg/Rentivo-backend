@@ -71,8 +71,12 @@ router.get("/status", authenticateToken, async (req: AuthRequest, res: Response)
  * GET /api/kyc/
  * Admin fetch all KYC records
  */
-router.get("/", async (_req, res) => {
+router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied. Admins only." });
+    }
+
     const kycs = await prisma.kYC.findMany({
       include: { user: true },
     });
@@ -80,6 +84,42 @@ router.get("/", async (_req, res) => {
   } catch (err: any) {
     console.error("KYC fetch error:", err);
     return res.status(500).json({ error: "Failed to fetch KYC", details: err.message });
+  }
+});
+
+/**
+ * POST /api/kyc/review
+ * Admin approves or rejects a KYC submission
+ */
+router.post("/review", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied. Admins only." });
+    }
+
+    const { userid, status } = req.body;
+
+    if (!userid || !status) {
+      return res.status(400).json({ error: "userid and status are required" });
+    }
+
+    if (!["approved", "rejected"].includes(status.toLowerCase())) {
+      return res.status(400).json({ error: "Invalid status. Use 'approved' or 'rejected'" });
+    }
+
+    const updatedKyc = await prisma.kYC.update({
+      where: { userid },
+      data: { verified: status.toLowerCase() },
+    });
+
+    // TODO: add email/SMS notification
+    return res.json({
+      message: `KYC ${status} successfully`,
+      kyc: updatedKyc,
+    });
+  } catch (err: any) {
+    console.error("KYC review error:", err);
+    return res.status(500).json({ error: "Failed to review KYC", details: err.message });
   }
 });
 
