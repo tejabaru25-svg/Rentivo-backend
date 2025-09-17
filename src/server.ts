@@ -10,7 +10,7 @@ import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
 import bookingRoutes from "./routes/bookings";
 import payments from "./routes/payments";   // ✅ payments routes
-import kycRoutes from "./routes/kyc";       // ✅ new KYC routes
+import kycRoutes from "./routes/kyc";       // ✅ KYC routes
 import issueRoutes from "./routes/issues";
 import testRoutes from "./routes/test";     // ✅ test email + sms routes
 import { authenticateToken } from "./authMiddleware";
