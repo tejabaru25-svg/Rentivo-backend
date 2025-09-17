@@ -25,7 +25,7 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res: Response) =
         panurl: panUrl,
         aadhaarfronturl: aadhaarFrontUrl,
         aadhaarbackurl: aadhaarBackUrl,
-        verified: "pending", // pending by default
+        verified: "pending", // default status
         submittedat: new Date(),
         createdat: new Date(),
       },
@@ -35,6 +35,36 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res: Response) =
   } catch (err: any) {
     console.error("KYC create error:", err);
     return res.status(500).json({ error: "KYC failed", details: err.message });
+  }
+});
+
+/**
+ * GET /api/kyc/status
+ * User checks their own KYC status
+ */
+router.get("/status", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user.id;
+
+    const kyc = await prisma.kyc.findFirst({
+      where: { userid: userId },
+      orderBy: { submittedat: "desc" }, // in case user submitted multiple times
+    });
+
+    if (!kyc) {
+      return res.status(404).json({ message: "No KYC found for this user" });
+    }
+
+    return res.json({
+      status: kyc.verified,
+      panUrl: kyc.panurl,
+      aadhaarFrontUrl: kyc.aadhaarfronturl,
+      aadhaarBackUrl: kyc.aadhaarbackurl,
+      submittedAt: kyc.submittedat,
+    });
+  } catch (err: any) {
+    console.error("KYC status error:", err);
+    return res.status(500).json({ error: "Failed to fetch KYC status", details: err.message });
   }
 });
 
