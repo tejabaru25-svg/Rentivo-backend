@@ -79,8 +79,9 @@ model KYC {
   panurl          String?
   aadhaarfronturl String?
   aadhaarbackurl  String?
-  verified        Boolean  @default(false)
+  verified        String   @default("pending") // ✅ changed from Boolean → String
   submittedat     DateTime?
+  createdat       DateTime @default(now())     // ✅ added createdAt for consistency
 }
 
 model Issue {
