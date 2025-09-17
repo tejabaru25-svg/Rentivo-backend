@@ -1,7 +1,6 @@
 import { Router, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { AuthRequest } from "../authMiddleware";
-import authMiddleware from "../authMiddleware";
+import { AuthRequest, authenticateToken } from "../authMiddleware";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -10,7 +9,7 @@ const prisma = new PrismaClient();
  * POST /api/kyc/submit
  * User submits KYC (PAN + Aadhaar).
  */
-router.post("/submit", authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { panUrl, aadhaarFrontUrl, aadhaarBackUrl } = req.body;
     const userId = req.user.id; // from JWT
@@ -19,13 +18,13 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res: Response) =
       return res.status(400).json({ error: "All KYC documents are required" });
     }
 
-    const kycRecord = await prisma.kyc.create({
+    const kycRecord = await prisma.kYC.create({
       data: {
         userid: userId,
         panurl: panUrl,
         aadhaarfronturl: aadhaarFrontUrl,
         aadhaarbackurl: aadhaarBackUrl,
-        verified: "pending", // default status
+        verified: "pending",
         submittedat: new Date(),
         createdat: new Date(),
       },
@@ -42,13 +41,13 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res: Response) =
  * GET /api/kyc/status
  * User checks their own KYC status
  */
-router.get("/status", authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get("/status", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user.id;
 
-    const kyc = await prisma.kyc.findFirst({
+    const kyc = await prisma.kYC.findFirst({
       where: { userid: userId },
-      orderBy: { submittedat: "desc" }, // in case user submitted multiple times
+      orderBy: { submittedat: "desc" },
     });
 
     if (!kyc) {
@@ -74,7 +73,7 @@ router.get("/status", authMiddleware, async (req: AuthRequest, res: Response) =>
  */
 router.get("/", async (_req, res) => {
   try {
-    const kycs = await prisma.kyc.findMany({
+    const kycs = await prisma.kYC.findMany({
       include: { user: true },
     });
     return res.json(kycs);
