@@ -9,38 +9,38 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  name         String?
-  email        String?    @unique
-  phone        String?    @unique
-  passwordhash String
-  role         String     @default("RENTER") // RENTER | OWNER | ADMIN
-  kyc          KYC?
-  createdat    DateTime   @default(now())
-  updatedat    DateTime   @updatedAt
-  items        Item[]     @relation("owner_items")
-  bookings     Booking[]
-  payments     Payment[]
-  issues       Issue[]
-  fcmtoken     String?
-  isverified   Boolean    @default(false)
-  resolvedIssues Issue[]  @relation("IssueResolvedBy") // ✅ for admin dispute resolution
+  id             String     @id @default(uuid())
+  name           String?
+  email          String?    @unique
+  phone          String?    @unique
+  passwordhash   String
+  role           String     @default("RENTER") // RENTER | OWNER | ADMIN
+  kyc            KYC?
+  createdat      DateTime   @default(now())
+  updatedat      DateTime   @updatedAt
+  items          Item[]     @relation("owner_items")
+  bookings       Booking[]
+  payments       Payment[]
+  issues         Issue[]
+  fcmtoken       String?
+  isverified     Boolean    @default(false)
+  resolvedIssues Issue[]    @relation("IssueResolvedBy") // ✅ for admin dispute resolution
 }
 
 model Item {
-  id          String        @id @default(uuid())
-  ownerid     String
-  owner       User          @relation("owner_items", fields: [ownerid], references: [id])
-  title       String
-  description String?
-  category    String
-  priceperday Int
-  available   Boolean       @default(true)
-  photos      String[]
-  location    String        // ✅ Location binding
-  createdat   DateTime      @default(now())
-  updatedat   DateTime      @updatedAt
-  bookings    Booking[]
+  id           String        @id @default(uuid())
+  ownerid      String
+  owner        User          @relation("owner_items", fields: [ownerid], references: [id])
+  title        String
+  description  String?
+  category     String
+  priceperday  Int
+  available    Boolean       @default(true)
+  photos       String[]
+  location     String        // ✅ Location binding
+  createdat    DateTime      @default(now())
+  updatedat    DateTime      @updatedAt
+  bookings     Booking[]
   availability Availability[]
 }
 
@@ -55,30 +55,30 @@ model Availability {
 }
 
 model Booking {
-  id             String   @id @default(uuid())
-  itemid         String
-  item           Item     @relation(fields: [itemid], references: [id])
-  renterid       String
-  renter         User     @relation(fields: [renterid], references: [id])
-  startdate      DateTime
-  enddate        DateTime
-  status         String   @default("PENDING") // PENDING | CONFIRMED | ONGOING | COMPLETED | CANCELLED
+  id              String         @id @default(uuid())
+  itemid          String
+  item            Item           @relation(fields: [itemid], references: [id])
+  renterid        String
+  renter          User           @relation(fields: [renterid], references: [id])
+  startdate       DateTime
+  enddate         DateTime
+  status          String         @default("PENDING") // PENDING | CONFIRMED | ONGOING | COMPLETED | CANCELLED
   // ✅ Handover details
-  handoverphoto  String?
-  handovernotes  String?
-  returnphoto    String?
-  returnnotes    String?
+  handoverphoto   String?
+  handovernotes   String?
+  returnphoto     String?
+  returnnotes     String?
   // ✅ Rental extension
-  extendeduntil  DateTime?
+  extendeduntil   DateTime?
   // ✅ Insurance
-  insurancefee   Int?
-  insurancepool  InsurancePool? @relation(fields: [insurancepoolid], references: [id])
+  insurancefee    Int?
   insurancepoolid String?
+  insurancepool   InsurancePool? @relation("BookingInsurance", fields: [insurancepoolid], references: [id])
   // ✅ Payment (linked model)
-  payment        Payment?
-  createdat      DateTime @default(now())
-  updatedat      DateTime @updatedAt
-  issues         Issue[]
+  payment         Payment?
+  createdat       DateTime @default(now())
+  updatedat       DateTime @updatedAt
+  issues          Issue[]
 }
 
 model Payment {
@@ -111,24 +111,26 @@ model KYC {
 model InsurancePool {
   id        String    @id @default(uuid())
   balance   Int       @default(0)
-  bookings  Booking[]
-  issues    Issue[]
+  bookings  Booking[] @relation("BookingInsurance")
+  issues    Issue[]   @relation("InsurancePoolIssues")
   createdat DateTime  @default(now())
   updatedat DateTime  @updatedAt
 }
 
 model Issue {
-  id             String   @id @default(uuid())
-  bookingid      String?
-  booking        Booking? @relation(fields: [bookingid], references: [id])
-  userid         String
-  user           User     @relation(fields: [userid], references: [id])
-  description    String
-  photos         String[]
-  status         String   @default("OPEN") // OPEN | APPROVED | REJECTED | RESOLVED
-  resolutionnote String?
-  resolvedbyid   String?
-  resolvedby     User?    @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
-  createdat      DateTime @default(now())
-  updatedat      DateTime @updatedAt
+  id              String         @id @default(uuid())
+  bookingid       String?
+  booking         Booking?       @relation(fields: [bookingid], references: [id])
+  userid          String
+  user            User           @relation(fields: [userid], references: [id])
+  description     String
+  photos          String[]
+  status          String         @default("OPEN") // OPEN | APPROVED | REJECTED | RESOLVED
+  resolutionnote  String?
+  resolvedbyid    String?
+  resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
+  insurancepoolid String?
+  insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
+  createdat       DateTime       @default(now())
+  updatedat       DateTime       @updatedAt
 }
