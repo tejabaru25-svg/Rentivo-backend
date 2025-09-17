@@ -8,11 +8,10 @@ import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
-import bookingRoutes from "./routes/bookings";
-import payments from "./routes/payments";   // ✅ payments routes
-import kycRoutes from "./routes/kyc";       // ✅ KYC routes
+import bookingRoutes from "./routes/booking";  // ✅ merged bookings + payments here
+import kycRoutes from "./routes/kyc";          // ✅ KYC routes
 import issueRoutes from "./routes/issues";
-import testRoutes from "./routes/test";     // ✅ test email + sms routes
+import testRoutes from "./routes/test";        // ✅ test email + sms routes
 import { authenticateToken } from "./authMiddleware";
 
 const app = express();
@@ -35,11 +34,10 @@ app.get("/", (_req: Request, res: Response) => {
 // -------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/payments", payments);
-app.use("/api/kyc", kycRoutes);             // ✅ KYC endpoints
+app.use("/api/bookings", bookingRoutes);   // ✅ now includes booking + payments
+app.use("/api/kyc", kycRoutes);            // ✅ KYC endpoints
 app.use("/api/issues", issueRoutes);
-app.use("/api/test", testRoutes);           // ✅ test email + sms routes
+app.use("/api/test", testRoutes);          // ✅ test email + sms routes
 
 // -------------------
 // Protected Test Route
