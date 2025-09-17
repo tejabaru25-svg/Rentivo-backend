@@ -18,8 +18,16 @@ router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response
       return res.status(400).json({ error: "All KYC documents are required" });
     }
 
-    const kycRecord = await prisma.kYC.create({
-      data: {
+    const kycRecord = await prisma.kYC.upsert({
+      where: { userid: userId },
+      update: {
+        panurl: panUrl,
+        aadhaarfronturl: aadhaarFrontUrl,
+        aadhaarbackurl: aadhaarBackUrl,
+        verified: "pending",
+        submittedat: new Date(),
+      },
+      create: {
         userid: userId,
         panurl: panUrl,
         aadhaarfronturl: aadhaarFrontUrl,
@@ -32,7 +40,7 @@ router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response
 
     return res.json({ message: "KYC submitted successfully", kyc: kycRecord });
   } catch (err: any) {
-    console.error("KYC create error:", err);
+    console.error("KYC submit error:", err);
     return res.status(500).json({ error: "KYC failed", details: err.message });
   }
 });
@@ -112,7 +120,6 @@ router.post("/review", authenticateToken, async (req: AuthRequest, res: Response
       data: { verified: status.toLowerCase() },
     });
 
-    // TODO: add email/SMS notification
     return res.json({
       message: `KYC ${status} successfully`,
       kyc: updatedKyc,
