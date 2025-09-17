@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -9,16 +9,130 @@ import { authenticateToken } from "../authMiddleware";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// ✅ Setup Razorpay client
+// ✅ Razorpay client
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID as string,
   key_secret: process.env.RAZORPAY_KEY_SECRET as string,
 });
 
-// ----------------------
-// Create Payment (DB + optional Razorpay Order)
-// ----------------------
-router.post("/", authenticateToken, async (req, res) => {
+/**
+ * ======================
+ * Extended Booking APIs
+ * ======================
+ */
+
+// POST /api/items/:id/availability
+router.post(
+  "/items/:id/availability",
+  authenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    const { startdate, enddate } = req.body;
+    try {
+      const availability = await prisma.availability.create({
+        data: {
+          itemid: req.params.id,
+          startdate: new Date(startdate),
+          enddate: new Date(enddate),
+        },
+      });
+      res.json(availability);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/items/:id/availability
+router.get(
+  "/items/:id/availability",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const availability = await prisma.availability.findMany({
+        where: { itemid: req.params.id },
+      });
+      res.json(availability);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// PATCH /api/bookings/:id/handover
+router.patch(
+  "/bookings/:id/handover",
+  authenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    const { handoverphoto, handovernotes } = req.body;
+    try {
+      const booking = await prisma.booking.update({
+        where: { id: req.params.id },
+        data: { handoverphoto, handovernotes, status: "ONGOING" },
+      });
+      res.json(booking);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// PATCH /api/bookings/:id/return
+router.patch(
+  "/bookings/:id/return",
+  authenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    const { returnphoto, returnnotes } = req.body;
+    try {
+      const booking = await prisma.booking.update({
+        where: { id: req.params.id },
+        data: { returnphoto, returnnotes, status: "COMPLETED" },
+      });
+      res.json(booking);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// PATCH /api/bookings/:id/extend
+router.patch(
+  "/bookings/:id/extend",
+  authenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    const { extendeduntil } = req.body;
+    try {
+      const booking = await prisma.booking.update({
+        where: { id: req.params.id },
+        data: { extendeduntil: new Date(extendeduntil) },
+      });
+      res.json(booking);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/admin/insurance
+router.get(
+  "/admin/insurance",
+  authenticateToken,
+  async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const pool = await prisma.insurancePool.findMany();
+      res.json(pool);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+/**
+ * ======================
+ * Payments APIs
+ * ======================
+ */
+
+// POST /api/payments → create Razorpay order + DB record
+router.post("/", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
@@ -26,14 +140,12 @@ router.post("/", authenticateToken, async (req, res) => {
       return res.status(400).json({ error: "bookingid, userid and amount are required" });
     }
 
-    // Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: Number(amount) * 100, // paise
+      amount: Number(amount) * 100,
       currency: "INR",
       receipt: bookingid,
     });
 
-    // Create DB record
     const payment = await prisma.payment.create({
       data: {
         bookingid,
@@ -53,18 +165,17 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
-// ----------------------
-// Confirm Payment (verify + notify)
-// ----------------------
-router.post("/confirm", authenticateToken, async (req, res) => {
+// POST /api/payments/confirm → verify payment
+router.post("/confirm", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
 
     if (!razorpayorderid || !razorpaypaymentid || !signature) {
-      return res.status(400).json({ error: "razorpayorderid, razorpaypaymentid and signature are required" });
+      return res
+        .status(400)
+        .json({ error: "razorpayorderid, razorpaypaymentid and signature are required" });
     }
 
-    // Verify Razorpay signature
     const sign = razorpayorderid + "|" + razorpaypaymentid;
     const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
@@ -75,22 +186,16 @@ router.post("/confirm", authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
-    // Update DB
     const updated = await prisma.payment.update({
       where: { id: paymentId },
-      data: {
-        razorpaypaymentid,
-        status: "PAID",
-      },
+      data: { razorpaypaymentid, status: "PAID" },
       include: { booking: { include: { item: { include: { owner: true } }, renter: true } }, user: true },
     });
 
-    // Send notifications (safe)
     const booking = updated.booking;
     const renter = booking?.renter;
     const owner = booking?.item?.owner;
     const item = booking?.item;
-
     const amount = updated.amount;
 
     if (renter?.email) {
@@ -132,10 +237,8 @@ router.post("/confirm", authenticateToken, async (req, res) => {
   }
 });
 
-// ----------------------
-// List Payments
-// ----------------------
-router.get("/", async (_req, res) => {
+// GET /api/payments → list all payments
+router.get("/", async (_req: Request, res: Response) => {
   try {
     const payments = await prisma.payment.findMany({
       include: { booking: true, user: true },
