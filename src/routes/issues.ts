@@ -9,8 +9,6 @@ const prisma = new PrismaClient();
  * ======================
  * Owner: Create Issue
  * ======================
- * - Only OWNER can raise an issue
- * - Can only be raised after booking is COMPLETED
  */
 router.post("/", authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -21,12 +19,10 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "bookingid and description are required" });
     }
 
-    // Ensure only OWNER can raise
     if (user.role !== "OWNER") {
       return res.status(403).json({ error: "Only owners can raise issues" });
     }
 
-    // Check booking exists & is completed
     const booking = await prisma.booking.findUnique({
       where: { id: bookingid },
     });
@@ -59,8 +55,6 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
  * ======================
  * Admin: Resolve Issue
  * ======================
- * - Only ADMIN can resolve
- * - Updates status and resolution note
  */
 router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -80,4 +74,66 @@ router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Respon
       data: {
         status,
         resolutionnote,
-        resolvedbyid: user.
+        resolvedbyid: user.id,
+      },
+    });
+
+    return res.json({ message: "Issue resolved", issue });
+  } catch (err: any) {
+    console.error("Issue resolve error:", err);
+    return res.status(500).json({ error: "Failed to resolve issue", details: err.message });
+  }
+});
+
+/**
+ * ======================
+ * Admin: List All Issues
+ * ======================
+ */
+router.get("/", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+
+    if (user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Only admins can view all issues" });
+    }
+
+    const issues = await prisma.issue.findMany({
+      include: { booking: true, user: true, resolvedby: true },
+      orderBy: { createdat: "desc" },
+    });
+
+    return res.json(issues);
+  } catch (err: any) {
+    console.error("Issue fetch error:", err);
+    return res.status(500).json({ error: "Failed to fetch issues", details: err.message });
+  }
+});
+
+/**
+ * ======================
+ * Owner: List My Issues
+ * ======================
+ */
+router.get("/my", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+
+    if (user.role !== "OWNER") {
+      return res.status(403).json({ error: "Only owners can view their issues" });
+    }
+
+    const issues = await prisma.issue.findMany({
+      where: { userid: user.id },
+      include: { booking: true },
+      orderBy: { createdat: "desc" },
+    });
+
+    return res.json(issues);
+  } catch (err: any) {
+    console.error("My issues fetch error:", err);
+    return res.status(500).json({ error: "Failed to fetch owner issues", details: err.message });
+  }
+});
+
+export default router;
