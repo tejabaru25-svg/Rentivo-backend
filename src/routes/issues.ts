@@ -1,41 +1,83 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { authenticateToken } from "../authMiddleware";
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Create issue
-router.post("/", async (req, res) => {
+/**
+ * ======================
+ * Owner: Create Issue
+ * ======================
+ * - Only OWNER can raise an issue
+ * - Can only be raised after booking is COMPLETED
+ */
+router.post("/", authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { userid, bookingid, description, photos } = req.body;
+    const { bookingid, description, photos } = req.body;
+    const user = (req as any).user;
+
+    if (!bookingid || !description) {
+      return res.status(400).json({ error: "bookingid and description are required" });
+    }
+
+    // Ensure only OWNER can raise
+    if (user.role !== "OWNER") {
+      return res.status(403).json({ error: "Only owners can raise issues" });
+    }
+
+    // Check booking exists & is completed
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingid },
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    if (booking.status !== "COMPLETED") {
+      return res.status(400).json({ error: "Issue can only be raised after booking is COMPLETED" });
+    }
 
     const issue = await prisma.issue.create({
       data: {
-        userid,
         bookingid,
+        userid: user.id,
         description,
-        photos,
+        photos: photos || [],
+        status: "OPEN",
       },
     });
 
-    return res.json(issue);
+    return res.json({ message: "Issue created successfully", issue });
   } catch (err: any) {
     console.error("Issue create error:", err);
     return res.status(500).json({ error: "Issue creation failed", details: err.message });
   }
 });
 
-// Get all issues
-router.get("/", async (_req, res) => {
+/**
+ * ======================
+ * Admin: Resolve Issue
+ * ======================
+ * - Only ADMIN can resolve
+ * - Updates status and resolution note
+ */
+router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Response) => {
   try {
-    const issues = await prisma.issue.findMany({
-      include: { user: true },
-    });
-    return res.json(issues);
-  } catch (err: any) {
-    console.error("Issue fetch error:", err);
-    return res.status(500).json({ error: "Failed to fetch issues", details: err.message });
-  }
-});
+    const { status, resolutionnote } = req.body;
+    const user = (req as any).user;
 
-export default router;
+    if (user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Only admins can resolve issues" });
+    }
+
+    if (!["APPROVED", "REJECTED", "RESOLVED"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const issue = await prisma.issue.update({
+      where: { id: req.params.id },
+      data: {
+        status,
+        resolutionnote,
+        resolvedbyid: user.
