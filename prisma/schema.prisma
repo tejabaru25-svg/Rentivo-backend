@@ -21,7 +21,7 @@ model User {
   items          Item[]     @relation("owner_items")
   bookings       Booking[]
   payments       Payment[]
-  issues         Issue[]
+  issues         Issue[]        // issues raised by this user
   fcmtoken       String?
   isverified     Boolean    @default(false)
   resolvedIssues Issue[]    @relation("IssueResolvedBy") // ✅ for admin dispute resolution
@@ -37,7 +37,7 @@ model Item {
   priceperday  Int
   available    Boolean       @default(true)
   photos       String[]
-  location     String        // ✅ Location binding
+  location     String
   createdat    DateTime      @default(now())
   updatedat    DateTime      @updatedAt
   bookings     Booking[]
