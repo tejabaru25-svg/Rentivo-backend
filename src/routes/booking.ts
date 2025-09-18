@@ -17,11 +17,41 @@ const razorpay = new Razorpay({
 
 /**
  * ======================
- * Extended Booking APIs
+ * Booking APIs
  * ======================
  */
 
-// POST /api/items/:id/availability
+// POST /api/bookings/create → create a booking (non-payment)
+router.post("/create", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { itemid, renterid, startdate, enddate } = req.body;
+
+    if (!itemid || !renterid || !startdate || !enddate) {
+      return res
+        .status(400)
+        .json({ error: "itemid, renterid, startdate, enddate are required" });
+    }
+
+    const booking = await prisma.booking.create({
+      data: {
+        itemid,
+        renterid,
+        startdate: new Date(startdate),
+        enddate: new Date(enddate),
+        status: "PENDING",
+      },
+    });
+
+    return res.json({ message: "Booking created", booking });
+  } catch (err: any) {
+    console.error("Booking create error:", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to create booking", details: err.message });
+  }
+});
+
+// POST /api/bookings/items/:id/availability → add availability
 router.post(
   "/items/:id/availability",
   authenticateToken,
@@ -42,7 +72,7 @@ router.post(
   }
 );
 
-// GET /api/items/:id/availability
+// GET /api/bookings/items/:id/availability → fetch availability
 router.get(
   "/items/:id/availability",
   async (req: Request, res: Response): Promise<void> => {
@@ -59,7 +89,7 @@ router.get(
 
 // PATCH /api/bookings/:id/handover
 router.patch(
-  "/bookings/:id/handover",
+  "/:id/handover",
   authenticateToken,
   async (req: Request, res: Response): Promise<void> => {
     const { handoverphoto, handovernotes } = req.body;
@@ -77,7 +107,7 @@ router.patch(
 
 // PATCH /api/bookings/:id/return
 router.patch(
-  "/bookings/:id/return",
+  "/:id/return",
   authenticateToken,
   async (req: Request, res: Response): Promise<void> => {
     const { returnphoto, returnnotes } = req.body;
@@ -95,7 +125,7 @@ router.patch(
 
 // PATCH /api/bookings/:id/extend
 router.patch(
-  "/bookings/:id/extend",
+  "/:id/extend",
   authenticateToken,
   async (req: Request, res: Response): Promise<void> => {
     const { extendeduntil } = req.body;
@@ -111,7 +141,7 @@ router.patch(
   }
 );
 
-// GET /api/admin/insurance
+// GET /api/bookings/admin/insurance
 router.get(
   "/admin/insurance",
   authenticateToken,
@@ -127,17 +157,19 @@ router.get(
 
 /**
  * ======================
- * Payments APIs
+ * Payments APIs (inside bookings)
  * ======================
  */
 
-// POST /api/payments → create Razorpay order + DB record
-router.post("/", authenticateToken, async (req: Request, res: Response) => {
+// POST /api/bookings/pay → create Razorpay order + DB record
+router.post("/pay", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
     if (!bookingid || !userid || !amount) {
-      return res.status(400).json({ error: "bookingid, userid and amount are required" });
+      return res
+        .status(400)
+        .json({ error: "bookingid, userid and amount are required" });
     }
 
     const order = await razorpay.orders.create({
@@ -159,96 +191,4 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
     });
 
     return res.json({ message: "Payment created", payment, razorpayOrder: order });
-  } catch (err: any) {
-    console.error("Payment create error:", err);
-    return res.status(500).json({ error: "Payment failed", details: err.message });
   }
-});
-
-// POST /api/payments/confirm → verify payment
-router.post("/confirm", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
-
-    if (!razorpayorderid || !razorpaypaymentid || !signature) {
-      return res
-        .status(400)
-        .json({ error: "razorpayorderid, razorpaypaymentid and signature are required" });
-    }
-
-    const sign = razorpayorderid + "|" + razorpaypaymentid;
-    const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
-      .update(sign.toString())
-      .digest("hex");
-
-    if (signature !== expectedSign) {
-      return res.status(400).json({ success: false, message: "Payment verification failed" });
-    }
-
-    const updated = await prisma.payment.update({
-      where: { id: paymentId },
-      data: { razorpaypaymentid, status: "PAID" },
-      include: { booking: { include: { item: { include: { owner: true } }, renter: true } }, user: true },
-    });
-
-    const booking = updated.booking;
-    const renter = booking?.renter;
-    const owner = booking?.item?.owner;
-    const item = booking?.item;
-    const amount = updated.amount;
-
-    if (renter?.email) {
-      try {
-        await sendEmail(
-          renter.email,
-          "✅ Payment Received",
-          `<p>Your payment of ₹${amount} for ${item?.title} has been received.</p>`
-        );
-      } catch {}
-    }
-
-    if (owner?.email) {
-      try {
-        await sendEmail(
-          owner.email,
-          "📢 Payment Completed",
-          `<p>You received a payment of ₹${amount} for your item ${item?.title}.</p>`
-        );
-      } catch {}
-    }
-
-    if (renter?.phone) {
-      try {
-        await sendSMS(renter.phone, `✅ Payment of ₹${amount} received for booking ${booking?.id}`);
-      } catch {}
-    }
-
-    if (owner?.phone) {
-      try {
-        await sendSMS(owner.phone, `📢 Payment of ₹${amount} completed for your item ${item?.title}`);
-      } catch {}
-    }
-
-    return res.json({ success: true, message: "Payment verified & updated", payment: updated });
-  } catch (err: any) {
-    console.error("Payment confirm error:", err);
-    return res.status(500).json({ error: "Failed to confirm payment", details: err.message });
-  }
-});
-
-// GET /api/payments → list all payments
-router.get("/", async (_req: Request, res: Response) => {
-  try {
-    const payments = await prisma.payment.findMany({
-      include: { booking: true, user: true },
-      orderBy: { createdat: "desc" },
-    });
-    return res.json(payments);
-  } catch (err: any) {
-    console.error("Payment fetch error:", err);
-    return res.status(500).json({ error: "Failed to fetch payments", details: err.message });
-  }
-});
-
-export default router;
