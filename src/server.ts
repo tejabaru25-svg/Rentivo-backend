@@ -8,40 +8,48 @@ import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
-import bookingRoutes from "./routes/booking";  // ✅ merged bookings + payments
-import kycRoutes from "./routes/kyc";          // ✅ KYC routes
-import issueRoutes from "./routes/issues";     // ✅ Issue routes
-import testRoutes from "./routes/test";        // ✅ Test email + SMS routes
+import bookingRoutes from "./routes/booking";   // ✅ merged bookings + payments
+import kycRoutes from "./routes/kyc";           // ✅ KYC routes
+import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
+import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
 import { authenticateToken } from "./authMiddleware";
 
 const app = express();
 
-// -------------------
-// Middleware
-// -------------------
+/**
+ * =====================
+ * Middleware
+ * =====================
+ */
 app.use(cors()); // TODO: restrict to frontend domain later
 app.use(express.json());
 
-// -------------------
-// Health Check / Root
-// -------------------
+/**
+ * =====================
+ * Health Check
+ * =====================
+ */
 app.get("/", (_req: Request, res: Response) => {
   return res.json({ ok: true, version: "1.0" });
 });
 
-// -------------------
-// API Routes
-// -------------------
+/**
+ * =====================
+ * API Routes
+ * =====================
+ */
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
-app.use("/api/bookings", bookingRoutes);   // ✅ now includes booking + payments
-app.use("/api/kyc", kycRoutes);
-app.use("/api/issues", issueRoutes);
-app.use("/api/test", testRoutes);
+app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
+app.use("/api/kyc", kycRoutes);            // ✅ KYC
+app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
+app.use("/api/test", testRoutes);          // ✅ test utils
 
-// -------------------
-// Protected Test Route
-// -------------------
+/**
+ * =====================
+ * Protected Test Route
+ * =====================
+ */
 app.get("/api/protected", authenticateToken, (req: Request, res: Response) => {
   return res.json({
     message: "You accessed a protected route!",
@@ -49,15 +57,19 @@ app.get("/api/protected", authenticateToken, (req: Request, res: Response) => {
   });
 });
 
-// -------------------
-// Upload Routes
-// -------------------
+/**
+ * =====================
+ * Upload Routes
+ * =====================
+ */
 app.use("/api/upload", s3Presign);
 app.use("/api/upload", s3Direct);
 
-// -------------------
-// Debug (non-secret env info)
-// -------------------
+/**
+ * =====================
+ * Debug Info
+ * =====================
+ */
 app.get("/debug/env", (_req: Request, res: Response) => {
   return res.json({
     AWS_REGION: process.env.AWS_REGION || null,
@@ -65,9 +77,11 @@ app.get("/debug/env", (_req: Request, res: Response) => {
   });
 });
 
-// -------------------
-// Start Server
-// -------------------
+/**
+ * =====================
+ * Start Server
+ * =====================
+ */
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`🚀 Rentivo backend listening on port: ${port}`);
