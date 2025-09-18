@@ -86,7 +86,9 @@ router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Respon
         },
       });
 
-      let insurancePoolUpdated = null;
+      let insurancePoolUpdated: { id: string; createdat: Date; updatedat: Date; balance: number } | null =
+        null;
+
       if (status === "APPROVED" && deductAmount && Number(deductAmount) > 0) {
         const amount = Math.floor(Number(deductAmount));
 
@@ -143,7 +145,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Respon
     return res.json({
       message: "Issue resolved",
       issue: result.updatedIssue,
-      insurancePool: result.insurancePoolUpdated ?? null,
+      insurancePool: result.insurancePoolUpdated,
     });
   } catch (err: any) {
     console.error("Issue resolve error:", err);
@@ -193,51 +195,6 @@ router.get("/my", authenticateToken, async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("My issues fetch error:", err);
     return res.status(500).json({ error: "Failed to fetch owner issues", details: err.message });
-  }
-});
-
-/**
- * ======================
- * Admin: Insurance Pool Balance & Top-up
- * ======================
- */
-router.get("/admin/insurance/balance", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
-    if (user.role !== "ADMIN") return res.status(403).json({ error: "Only admins can view insurance balance" });
-
-    let pool = await prisma.insurancePool.findFirst({ orderBy: { createdat: "asc" } });
-    if (!pool) pool = await prisma.insurancePool.create({ data: { balance: 0 } });
-
-    return res.json({ balance: pool.balance, pool });
-  } catch (err: any) {
-    console.error("Insurance balance fetch error:", err);
-    return res.status(500).json({ error: "Failed to fetch insurance balance", details: err.message });
-  }
-});
-
-router.post("/admin/insurance/topup", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { amount } = req.body;
-    const user = (req as any).user;
-    if (user.role !== "ADMIN") return res.status(403).json({ error: "Only admins can top up insurance pool" });
-
-    if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({ error: "Valid top-up amount is required" });
-    }
-
-    let pool = await prisma.insurancePool.findFirst({ orderBy: { createdat: "asc" } });
-    if (!pool) pool = await prisma.insurancePool.create({ data: { balance: 0 } });
-
-    const updatedPool = await prisma.insurancePool.update({
-      where: { id: pool.id },
-      data: { balance: pool.balance + Math.floor(Number(amount)) },
-    });
-
-    return res.json({ message: "Insurance pool topped up", pool: updatedPool });
-  } catch (err: any) {
-    console.error("Insurance top-up error:", err);
-    return res.status(500).json({ error: "Failed to top up insurance pool", details: err.message });
   }
 });
 
