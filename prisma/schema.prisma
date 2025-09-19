@@ -1,6 +1,6 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary"   // ✅ force binary engine for Render (fix WASM build error)
+  engineType = "binary"   // force binary engine for Render (fix WASM build error)
 }
 
 datasource db {
@@ -9,22 +9,22 @@ datasource db {
 }
 
 model User {
-  id             String     @id @default(uuid())
+  id             String       @id @default(uuid())
   name           String?
-  email          String?    @unique
-  phone          String?    @unique
+  email          String?      @unique
+  phone          String?      @unique
   passwordhash   String
-  role           String     @default("RENTER") // RENTER | OWNER | ADMIN
+  role           String       @default("RENTER") // RENTER | OWNER | ADMIN
   kyc            KYC?
-  createdat      DateTime   @default(now())
-  updatedat      DateTime   @updatedAt
-  items          Item[]     @relation("owner_items")
+  createdat      DateTime     @default(now())
+  updatedat      DateTime     @updatedAt
+  items          Item[]       @relation("owner_items")
   bookings       Booking[]
   payments       Payment[]
-  issues         Issue[]        // issues raised by this user
-  isverified     Boolean    @default(false)
-  resolvedIssues Issue[]    @relation("IssueResolvedBy") // ✅ for admin dispute resolution
-  devices        UserDevice[]   // ✅ link to device tokens
+  issues         Issue[]      // issues raised by this user
+  isverified     Boolean      @default(false)
+  resolvedIssues Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
+  devices        UserDevice[] // link to device tokens
 }
 
 model UserDevice {
@@ -72,18 +72,14 @@ model Booking {
   startdate       DateTime
   enddate         DateTime
   status          String         @default("PENDING") // PENDING | CONFIRMED | ONGOING | COMPLETED | CANCELLED
-  // ✅ Handover details
   handoverphoto   String?
   handovernotes   String?
   returnphoto     String?
   returnnotes     String?
-  // ✅ Rental extension
   extendeduntil   DateTime?
-  // ✅ Insurance
   insurancefee    Int?
   insurancepoolid String?
   insurancepool   InsurancePool? @relation("BookingInsurance", fields: [insurancepoolid], references: [id])
-  // ✅ Payment (linked model)
   payment         Payment?
   createdat       DateTime @default(now())
   updatedat       DateTime @updatedAt
@@ -138,4 +134,8 @@ model Issue {
   resolutionnote  String?
   resolvedbyid    String?
   resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
-  insurancepoolid
+  insurancepoolid String?
+  insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
+  createdat       DateTime       @default(now())
+  updatedat       DateTime       @updatedAt
+}
