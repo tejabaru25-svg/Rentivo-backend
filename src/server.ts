@@ -76,6 +76,8 @@ app.get("/debug/env", (_req: Request, res: Response) => {
   return res.json({
     AWS_REGION: process.env.AWS_REGION || null,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || null,
+    NODE_ENV: process.env.NODE_ENV || "not set",
+    PORT: process.env.PORT || "not set",
   });
 });
 
@@ -85,6 +87,14 @@ app.get("/debug/env", (_req: Request, res: Response) => {
  * =====================
  */
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`🚀 Rentivo backend listening on port: ${port}`);
-});
+
+try {
+  app.listen(port, () => {
+    console.log("✅ Rentivo backend started successfully");
+    console.log(`🚀 Listening on port: ${port}`);
+    console.log("🌍 Health check available at /");
+  });
+} catch (err) {
+  console.error("❌ Failed to start server:", err);
+  process.exit(1); // force crash so Render logs it
+}
