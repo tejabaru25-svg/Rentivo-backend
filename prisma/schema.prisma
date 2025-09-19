@@ -22,9 +22,18 @@ model User {
   bookings       Booking[]
   payments       Payment[]
   issues         Issue[]        // issues raised by this user
-  fcmtoken       String?
   isverified     Boolean    @default(false)
   resolvedIssues Issue[]    @relation("IssueResolvedBy") // ✅ for admin dispute resolution
+  devices        UserDevice[]   // ✅ link to device tokens
+}
+
+model UserDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  platform  String   // "ios" | "android" | "web"
+  createdAt DateTime @default(now())
 }
 
 model Item {
@@ -129,8 +138,4 @@ model Issue {
   resolutionnote  String?
   resolvedbyid    String?
   resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
-  insurancepoolid String?
-  insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
-  createdat       DateTime       @default(now())
-  updatedat       DateTime       @updatedAt
-}
+  insurancepoolid
