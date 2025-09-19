@@ -12,6 +12,7 @@ import bookingRoutes from "./routes/booking";   // ✅ merged bookings + payment
 import kycRoutes from "./routes/kyc";           // ✅ KYC routes
 import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
 import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
+import devicesRouter from "./routes/devices";   // ✅ NEW: FCM device registration
 import { authenticateToken } from "./authMiddleware";
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
 app.use("/api/kyc", kycRoutes);            // ✅ KYC
 app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
 app.use("/api/test", testRoutes);          // ✅ test utils
+app.use("/api/devices", authenticateToken, devicesRouter); // ✅ register devices
 
 /**
  * =====================
