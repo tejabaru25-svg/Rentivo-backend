@@ -1,5 +1,5 @@
-import { Router, Request, Response } from "express";
-import { authMiddleware } from "../middleware/auth";
+import { Router, Response } from "express";
+import authenticateToken, { AuthRequest } from "../authMiddleware";
 
 const router = Router();
 
@@ -19,26 +19,40 @@ interface Conversation {
 
 const conversations: Record<string, Conversation> = {};
 
-// GET /chat/conversation/:id → fetch messages
-router.get("/conversation/:id", authMiddleware, (req: Request, res: Response) => {
-  const { id } = req.params;
-  const convo = conversations[id] || { messages: [], otherUserName: "Unknown" };
-  res.json(convo);
-});
+/**
+ * GET /chat/conversation/:id
+ * Fetch messages in a conversation
+ */
+router.get(
+  "/conversation/:id",
+  authenticateToken,
+  (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const convo = conversations[id] || { messages: [], otherUserName: "Unknown" };
+    res.json(convo);
+  }
+);
 
-// POST /chat/send → send new message
-router.post("/send", authMiddleware, (req: Request, res: Response) => {
+/**
+ * POST /chat/send
+ * Send a new message
+ */
+router.post("/send", authenticateToken, (req: AuthRequest, res: Response) => {
   const { conversationId, text } = req.body;
+
+  if (!conversationId || !text) {
+    return res.status(400).json({ error: "conversationId and text are required" });
+  }
 
   if (!conversations[conversationId]) {
     conversations[conversationId] = { messages: [], otherUserName: "Unknown" };
   }
 
-  const user = (req as any).user; // from authMiddleware
+  const user = req.user || {};
   const message: Message = {
     id: Date.now(),
-    from: user?.role || "unknown",
-    senderName: user?.name || "User",
+    from: user.role || "unknown",
+    senderName: user.name || "User",
     text,
     createdAt: new Date(),
   };
