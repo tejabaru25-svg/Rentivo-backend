@@ -24,7 +24,10 @@ model User {
   issues         Issue[]      // issues raised by this user
   isverified     Boolean      @default(false)
   resolvedIssues Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
-  devices        UserDevice[] // link to device tokens
+  devices        UserDevice[] // FCM device tokens
+  conversationsO Conversation[] @relation("OwnerConversations")
+  conversationsR Conversation[] @relation("RenterConversations")
+  messages       Message[]    // messages sent
 }
 
 model UserDevice {
@@ -138,4 +141,28 @@ model Issue {
   insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
   createdat       DateTime       @default(now())
   updatedat       DateTime       @updatedAt
+}
+
+//
+// 🗨️ Chat system
+//
+model Conversation {
+  id        String    @id @default(uuid())
+  ownerId   String
+  renterId  String
+  owner     User      @relation("OwnerConversations", fields: [ownerId], references: [id])
+  renter    User      @relation("RenterConversations", fields: [renterId], references: [id])
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  text           String
+  createdAt      DateTime     @default(now())
 }
