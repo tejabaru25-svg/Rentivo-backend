@@ -4,7 +4,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { sendEmail } from "../utils/mailer";
 import { sendSMS } from "../utils/sms";
-import { authenticateToken } from "../authMiddleware";
+import authenticateToken, { AuthRequest } from "../authMiddleware";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -22,7 +22,7 @@ const razorpay = new Razorpay({
  */
 
 // POST /api/bookings/create → create booking
-router.post("/create", authenticateToken, async (req: Request, res: Response) => {
+router.post("/create", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { itemid, renterid, startdate, enddate } = req.body;
 
@@ -56,7 +56,7 @@ router.post("/create", authenticateToken, async (req: Request, res: Response) =>
 router.post(
   "/items/:id/availability",
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthRequest, res: Response): Promise<void> => {
     const { startdate, enddate } = req.body;
     try {
       const availability = await prisma.availability.create({
@@ -92,7 +92,7 @@ router.get(
 router.patch(
   "/:id/handover",
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthRequest, res: Response): Promise<void> => {
     const { handoverphoto, handovernotes } = req.body;
     try {
       const booking = await prisma.booking.update({
@@ -110,7 +110,7 @@ router.patch(
 router.patch(
   "/:id/return",
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthRequest, res: Response): Promise<void> => {
     const { returnphoto, returnnotes } = req.body;
     try {
       const booking = await prisma.booking.update({
@@ -128,7 +128,7 @@ router.patch(
 router.patch(
   "/:id/extend",
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthRequest, res: Response): Promise<void> => {
     const { extendeduntil } = req.body;
     try {
       const booking = await prisma.booking.update({
@@ -146,7 +146,7 @@ router.patch(
 router.get(
   "/admin/insurance",
   authenticateToken,
-  async (_req: Request, res: Response): Promise<void> => {
+  async (_req: AuthRequest, res: Response): Promise<void> => {
     try {
       const pool = await prisma.insurancePool.findMany();
       res.json(pool);
@@ -163,7 +163,7 @@ router.get(
  */
 
 // POST /api/bookings/pay
-router.post("/pay", authenticateToken, async (req: Request, res: Response) => {
+router.post("/pay", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
@@ -201,7 +201,7 @@ router.post("/pay", authenticateToken, async (req: Request, res: Response) => {
 });
 
 // POST /api/bookings/pay/confirm
-router.post("/pay/confirm", authenticateToken, async (req: Request, res: Response) => {
+router.post("/pay/confirm", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
 
