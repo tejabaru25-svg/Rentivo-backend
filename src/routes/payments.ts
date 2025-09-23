@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { sendEmail } from "../utils/mailer";
 import { sendSMS } from "../utils/sms";
-import { authenticateToken } from "../authMiddleware";
+import authenticateToken, { AuthRequest } from "../authMiddleware";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -18,7 +18,7 @@ const razorpay = new Razorpay({
 // ----------------------
 // Create Payment (DB + optional Razorpay Order)
 // ----------------------
-router.post("/", authenticateToken, async (req, res) => {
+router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
@@ -56,12 +56,14 @@ router.post("/", authenticateToken, async (req, res) => {
 // ----------------------
 // Confirm Payment (verify + notify)
 // ----------------------
-router.post("/confirm", authenticateToken, async (req, res) => {
+router.post("/confirm", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
 
     if (!razorpayorderid || !razorpaypaymentid || !signature) {
-      return res.status(400).json({ error: "razorpayorderid, razorpaypaymentid and signature are required" });
+      return res
+        .status(400)
+        .json({ error: "razorpayorderid, razorpaypaymentid and signature are required" });
     }
 
     // Verify Razorpay signature
@@ -78,11 +80,11 @@ router.post("/confirm", authenticateToken, async (req, res) => {
     // Update DB
     const updated = await prisma.payment.update({
       where: { id: paymentId },
-      data: {
-        razorpaypaymentid,
-        status: "PAID",
+      data: { razorpaypaymentid, status: "PAID" },
+      include: {
+        booking: { include: { item: { include: { owner: true } }, renter: true } },
+        user: true,
       },
-      include: { booking: { include: { item: { include: { owner: true } }, renter: true } }, user: true },
     });
 
     // Send notifications (safe)
@@ -90,7 +92,6 @@ router.post("/confirm", authenticateToken, async (req, res) => {
     const renter = booking?.renter;
     const owner = booking?.item?.owner;
     const item = booking?.item;
-
     const amount = updated.amount;
 
     if (renter?.email) {
@@ -115,17 +116,27 @@ router.post("/confirm", authenticateToken, async (req, res) => {
 
     if (renter?.phone) {
       try {
-        await sendSMS(renter.phone, `✅ Payment of ₹${amount} received for booking ${booking?.id}`);
+        await sendSMS(
+          renter.phone,
+          `✅ Payment of ₹${amount} received for booking ${booking?.id}`
+        );
       } catch {}
     }
 
     if (owner?.phone) {
       try {
-        await sendSMS(owner.phone, `📢 Payment of ₹${amount} completed for your item ${item?.title}`);
+        await sendSMS(
+          owner.phone,
+          `📢 Payment of ₹${amount} completed for your item ${item?.title}`
+        );
       } catch {}
     }
 
-    return res.json({ success: true, message: "Payment verified & updated", payment: updated });
+    return res.json({
+      success: true,
+      message: "Payment verified & updated",
+      payment: updated,
+    });
   } catch (err: any) {
     console.error("Payment confirm error:", err);
     return res.status(500).json({ error: "Failed to confirm payment", details: err.message });
@@ -135,7 +146,7 @@ router.post("/confirm", authenticateToken, async (req, res) => {
 // ----------------------
 // List Payments
 // ----------------------
-router.get("/", async (_req, res) => {
+router.get("/", async (_req, res: Response) => {
   try {
     const payments = await prisma.payment.findMany({
       include: { booking: true, user: true },
