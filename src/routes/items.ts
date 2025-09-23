@@ -5,7 +5,7 @@ import authenticateToken, { AuthRequest } from "../authMiddleware";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Helper: only allow these fields in update
+// ✅ Only allow these fields in update
 const ALLOWED_UPDATE_FIELDS = new Set([
   "title",
   "description",
@@ -16,13 +16,19 @@ const ALLOWED_UPDATE_FIELDS = new Set([
   "available",
 ]);
 
-// -------------------
-// Create Item
-// -------------------
+/**
+ * -------------------
+ * Create Item
+ * -------------------
+ */
 router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, category, priceperday, photos, location } = req.body;
-    const userId = req.user?.id; // from JWT
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
     if (!title || !category || priceperday === undefined || !location) {
       return res
@@ -34,12 +40,12 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       data: {
         ownerid: userId,
         title,
-        description: description || null,
         category,
+        location,
         priceperday:
           typeof priceperday === "string" ? parseInt(priceperday, 10) : priceperday,
         photos: Array.isArray(photos) ? photos : photos ? [photos] : [],
-        location,
+        ...(description ? { description } : {}), // ✅ only include if present
       },
     });
 
@@ -50,9 +56,11 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// -------------------
-// Get All Items
-// -------------------
+/**
+ * -------------------
+ * Get All Items
+ * -------------------
+ */
 router.get("/", async (_req, res: Response) => {
   try {
     const items = await prisma.item.findMany({
@@ -68,9 +76,11 @@ router.get("/", async (_req, res: Response) => {
   }
 });
 
-// -------------------
-// Get Single Item by ID
-// -------------------
+/**
+ * -------------------
+ * Get Single Item by ID
+ * -------------------
+ */
 router.get("/:id", async (req, res: Response) => {
   try {
     const { id } = req.params;
@@ -87,20 +97,26 @@ router.get("/:id", async (req, res: Response) => {
   }
 });
 
-// -------------------
-// Update Item
-// -------------------
+/**
+ * -------------------
+ * Update Item
+ * -------------------
+ */
 router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
     if (item.ownerid !== userId)
       return res.status(403).json({ error: "Not authorized" });
 
-    // Build update data only with allowed fields
+    // ✅ Build update data with only allowed fields
     const updateData: any = {};
     for (const key of Object.keys(req.body)) {
       if (ALLOWED_UPDATE_FIELDS.has(key)) {
@@ -108,7 +124,7 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
       }
     }
 
-    // Ensure priceperday is Int if provided
+    // ✅ Ensure correct types
     if (updateData.priceperday !== undefined) {
       updateData.priceperday =
         typeof updateData.priceperday === "string"
@@ -116,9 +132,12 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
           : updateData.priceperday;
     }
 
-    // Ensure photos is array
     if (updateData.photos && !Array.isArray(updateData.photos)) {
       updateData.photos = [updateData.photos];
+    }
+
+    if (updateData.description === undefined) {
+      delete updateData.description; // avoid Prisma error
     }
 
     const updatedItem = await prisma.item.update({
@@ -133,13 +152,19 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
   }
 });
 
-// -------------------
-// Delete Item
-// -------------------
+/**
+ * -------------------
+ * Delete Item
+ * -------------------
+ */
 router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
