@@ -8,12 +8,13 @@ import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
-import bookingRoutes from "./routes/booking";   // ✅ merged bookings + payments
+import bookingRoutes from "./routes/booking";   // ✅ bookings + payments
 import kycRoutes from "./routes/kyc";           // ✅ KYC routes
 import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
 import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
 import devicesRouter from "./routes/devices";   // ✅ FCM device registration
-import authenticateToken from "./authMiddleware"; // ✅ FIXED import
+import chatRoutes from "./routes/chat";         // ✅ NEW: Chat routes
+import authenticateToken from "./authMiddleware"; // ✅ fixed export
 
 const app = express();
 
@@ -22,7 +23,12 @@ const app = express();
  * Middleware
  * =====================
  */
-app.use(cors()); // TODO: restrict to frontend domain later
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "*", // ⚠️ allow all for now, lock down later
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 /**
@@ -44,6 +50,7 @@ app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
 app.use("/api/kyc", kycRoutes);            // ✅ KYC
 app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
+app.use("/api/chat", chatRoutes);          // ✅ Chat conversations & messages
 app.use("/api/test", testRoutes);          // ✅ test utils
 app.use("/api/devices", authenticateToken, devicesRouter); // ✅ register devices
 
@@ -78,6 +85,7 @@ app.get("/debug/env", (_req: Request, res: Response) => {
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || null,
     NODE_ENV: process.env.NODE_ENV || "not set",
     PORT: process.env.PORT || "not set",
+    FRONTEND_URL: process.env.FRONTEND_URL || "not set",
   });
 });
 
@@ -98,4 +106,3 @@ try {
   console.error("❌ Failed to start server:", err);
   process.exit(1); // force crash so Render logs it
 }
-
