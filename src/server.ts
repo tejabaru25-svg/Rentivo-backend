@@ -12,8 +12,8 @@ import bookingRoutes from "./routes/booking";   // ✅ merged bookings + payment
 import kycRoutes from "./routes/kyc";           // ✅ KYC routes
 import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
 import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
-import devicesRouter from "./routes/devices";   // ✅ NEW: FCM device registration
-import { authenticateToken } from "./authMiddleware";
+import devicesRouter from "./routes/devices";   // ✅ FCM device registration
+import authenticateToken from "./authMiddleware"; // ✅ FIXED import
 
 const app = express();
 
@@ -98,3 +98,4 @@ try {
   console.error("❌ Failed to start server:", err);
   process.exit(1); // force crash so Render logs it
 }
+
