@@ -1,6 +1,6 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { authenticateToken } from "../authMiddleware";
+import authenticateToken, { AuthRequest } from "../authMiddleware";
 import { sendEmail } from "../utils/mailer";
 import { sendSMS } from "../utils/sms";
 
@@ -12,15 +12,15 @@ const prisma = new PrismaClient();
  * Owner: Create Issue
  * ======================
  */
-router.post("/", authenticateToken, async (req: Request, res: Response) => {
+router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { bookingid, description, photos } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
 
     if (!bookingid || !description) {
       return res.status(400).json({ error: "bookingid and description are required" });
     }
-    if (user.role !== "OWNER") {
+    if (user?.role !== "OWNER") {
       return res.status(403).json({ error: "Only owners can raise issues" });
     }
 
@@ -55,12 +55,12 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
  * Admin: Resolve Issue
  * ======================
  */
-router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Response) => {
+router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { status, resolutionnote, deductAmount } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
 
-    if (user.role !== "ADMIN") {
+    if (user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Only admins can resolve issues" });
     }
     if (!["APPROVED", "REJECTED", "RESOLVED"].includes(status)) {
@@ -158,10 +158,10 @@ router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Respon
  * Admin: List All Issues
  * ======================
  */
-router.get("/", authenticateToken, async (req: Request, res: Response) => {
+router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const user = (req as any).user;
-    if (user.role !== "ADMIN") return res.status(403).json({ error: "Only admins can view all issues" });
+    const user = req.user;
+    if (user?.role !== "ADMIN") return res.status(403).json({ error: "Only admins can view all issues" });
 
     const issues = await prisma.issue.findMany({
       include: { booking: true, user: true, resolvedby: true, insurancepool: true },
@@ -180,10 +180,10 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
  * Owner: List My Issues
  * ======================
  */
-router.get("/my", authenticateToken, async (req: Request, res: Response) => {
+router.get("/my", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const user = (req as any).user;
-    if (user.role !== "OWNER") return res.status(403).json({ error: "Only owners can view their issues" });
+    const user = req.user;
+    if (user?.role !== "OWNER") return res.status(403).json({ error: "Only owners can view their issues" });
 
     const issues = await prisma.issue.findMany({
       where: { userid: user.id },
