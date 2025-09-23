@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { AuthRequest, authenticateToken } from "../authMiddleware";
+import authenticateToken, { AuthRequest } from "../authMiddleware";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { panUrl, aadhaarFrontUrl, aadhaarBackUrl } = req.body;
-    const userId = req.user.id; // from JWT
+    const userId = req.user?.id; // from JWT
 
     if (!panUrl || !aadhaarFrontUrl || !aadhaarBackUrl) {
       return res.status(400).json({ error: "All KYC documents are required" });
@@ -51,7 +51,7 @@ router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response
  */
 router.get("/status", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
     const kyc = await prisma.kYC.findFirst({
       where: { userid: userId },
@@ -81,7 +81,7 @@ router.get("/status", authenticateToken, async (req: AuthRequest, res: Response)
  */
 router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user.role !== "ADMIN") {
+    if (req.user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
 
@@ -101,7 +101,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
  */
 router.post("/review", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user.role !== "ADMIN") {
+    if (req.user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
 
