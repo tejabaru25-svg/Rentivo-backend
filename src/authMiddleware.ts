@@ -1,12 +1,23 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 // ✅ Extend Request type to include user
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    id: string;
+    role: string;
+    name?: string;
+    email?: string;
+  };
 }
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
+
+if (!JWT_SECRET) {
+  console.error("❌ JWT_SECRET is not set in environment variables!");
+  // In production, fail fast:
+  // throw new Error("JWT_SECRET missing");
+}
 
 /**
  * Middleware to authenticate JWT tokens
@@ -27,9 +38,22 @@ function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) 
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // ✅ Attach decoded payload to request
-    next();
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload & {
+      id: string;
+      role: string;
+      name?: string;
+      email?: string;
+    };
+
+    // ✅ Attach decoded payload to request
+    req.user = {
+      id: decoded.id,
+      role: decoded.role,
+      name: decoded.name,
+      email: decoded.email,
+    };
+
+    return next();
   } catch (err) {
     console.error("JWT verify failed:", err);
     return res.status(403).json({ error: "Invalid or expired token" });
