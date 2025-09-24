@@ -24,9 +24,9 @@ const ALLOWED_UPDATE_FIELDS = new Set([
 router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, category, priceperday, photos, location } = req.body;
-    const userId = req.user?.id;
+    const userid = req.user?.id; // JWT user id
 
-    if (!userId) {
+    if (!userid) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
@@ -38,14 +38,14 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
 
     const item = await prisma.item.create({
       data: {
-        ownerid: userId,
+        ownerid: userid,
         title,
         category,
         location,
         priceperday:
           typeof priceperday === "string" ? parseInt(priceperday, 10) : priceperday,
         photos: Array.isArray(photos) ? photos : photos ? [photos] : [],
-        ...(description ? { description } : {}), // ✅ only include if present
+        ...(description ? { description } : {}),
       },
     });
 
@@ -67,7 +67,7 @@ router.get("/", async (_req, res: Response) => {
       include: {
         owner: { select: { id: true, name: true, email: true, phone: true } },
       },
-      orderBy: { createdat: "desc" },
+      orderBy: { createdat: "desc" }, // ✅ lowercase field
     });
     return res.json(items);
   } catch (err: any) {
@@ -105,15 +105,15 @@ router.get("/:id", async (req, res: Response) => {
 router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
+    const userid = req.user?.id;
 
-    if (!userId) {
+    if (!userid) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
-    if (item.ownerid !== userId)
+    if (item.ownerid !== userid)
       return res.status(403).json({ error: "Not authorized" });
 
     // ✅ Build update data with only allowed fields
@@ -137,7 +137,7 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
     }
 
     if (updateData.description === undefined) {
-      delete updateData.description; // avoid Prisma error
+      delete updateData.description;
     }
 
     const updatedItem = await prisma.item.update({
@@ -160,15 +160,15 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
 router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
+    const userid = req.user?.id;
 
-    if (!userId) {
+    if (!userid) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
-    if (item.ownerid !== userId)
+    if (item.ownerid !== userid)
       return res.status(403).json({ error: "Not authorized" });
 
     await prisma.item.delete({ where: { id } });
@@ -180,3 +180,4 @@ router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response)
 });
 
 export default router;
+
