@@ -16,8 +16,8 @@ model User {
   passwordhash   String
   role           String       @default("RENTER") // RENTER | OWNER | ADMIN
   kyc            KYC?
-  createdAt      DateTime     @default(now()) @map("createdat")
-  updatedAt      DateTime     @updatedAt @map("updatedat")
+  createdat      DateTime     @default(now())
+  updatedat      DateTime     @updatedAt
   items          Item[]       @relation("owner_items")
   bookings       Booking[]
   payments       Payment[]
@@ -32,17 +32,17 @@ model User {
 
 model UserDevice {
   id        String   @id @default(cuid())
-  userId    String   @map("userid")
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
   platform  String   // "ios" | "android" | "web"
-  createdAt DateTime @default(now()) @map("createdat")
+  createdAt DateTime @default(now())
 }
 
 model Item {
   id           String        @id @default(uuid())
-  ownerId      String        @map("ownerid")
-  owner        User          @relation("owner_items", fields: [ownerId], references: [id])
+  ownerid      String
+  owner        User          @relation("owner_items", fields: [ownerid], references: [id])
   title        String
   description  String?
   category     String
@@ -50,70 +50,70 @@ model Item {
   available    Boolean       @default(true)
   photos       String[]
   location     String
-  createdAt    DateTime      @default(now()) @map("createdat")
-  updatedAt    DateTime      @updatedAt @map("updatedat")
+  createdat    DateTime      @default(now())
+  updatedat    DateTime      @updatedAt
   bookings     Booking[]
   availability Availability[]
 }
 
 model Availability {
   id        String   @id @default(uuid())
-  itemId    String   @map("itemid")
-  item      Item     @relation(fields: [itemId], references: [id])
-  startDate DateTime @map("startdate")
-  endDate   DateTime @map("enddate")
-  isBooked  Boolean  @default(false) @map("isbooked")
-  createdAt DateTime @default(now()) @map("createdat")
+  itemid    String
+  item      Item     @relation(fields: [itemid], references: [id])
+  startdate DateTime
+  enddate   DateTime
+  isbooked  Boolean  @default(false)
+  createdat DateTime @default(now())
 }
 
 model Booking {
   id              String         @id @default(uuid())
-  itemId          String         @map("itemid")
-  item            Item           @relation(fields: [itemId], references: [id])
-  renterId        String         @map("renterid")
-  renter          User           @relation(fields: [renterId], references: [id])
-  startDate       DateTime       @map("startdate")
-  endDate         DateTime       @map("enddate")
-  status          String         @default("PENDING")
-  handoverPhoto   String?        @map("handoverphoto")
-  handoverNotes   String?        @map("handovernotes")
-  returnPhoto     String?        @map("returnphoto")
-  returnNotes     String?        @map("returnnotes")
-  extendedUntil   DateTime?      @map("extendeduntil")
-  insuranceFee    Int?           @map("insurancefee")
-  insurancePoolId String?        @map("insurancepoolid")
-  insurancePool   InsurancePool? @relation("BookingInsurance", fields: [insurancePoolId], references: [id])
+  itemid          String
+  item            Item           @relation(fields: [itemid], references: [id])
+  renterid        String
+  renter          User           @relation(fields: [renterid], references: [id])
+  startdate       DateTime
+  enddate         DateTime
+  status          String         @default("PENDING") // PENDING | CONFIRMED | ONGOING | COMPLETED | CANCELLED
+  handoverphoto   String?
+  handovernotes   String?
+  returnphoto     String?
+  returnnotes     String?
+  extendeduntil   DateTime?
+  insurancefee    Int?
+  insurancepoolid String?
+  insurancepool   InsurancePool? @relation("BookingInsurance", fields: [insurancepoolid], references: [id])
   payment         Payment?
-  createdAt       DateTime @default(now()) @map("createdat")
-  updatedAt       DateTime @updatedAt @map("updatedat")
+  createdat       DateTime @default(now())
+  updatedat       DateTime @updatedAt
   issues          Issue[]
 }
 
 model Payment {
   id                String   @id @default(uuid())
-  bookingId         String   @unique @map("bookingid")
-  booking           Booking  @relation(fields: [bookingId], references: [id])
-  userId            String?  @map("userid")
-  user              User?    @relation(fields: [userId], references: [id])
+  bookingid         String   @unique
+  booking           Booking  @relation(fields: [bookingid], references: [id])
+  userid            String?
+  user              User?    @relation(fields: [userid], references: [id])
   amount            Int
-  insuranceFee      Int      @map("insurancefee")
-  platformFee       Int      @map("platformfee")
-  razorpayOrderId   String?  @map("razorpayorderid")
-  razorpayPaymentId String?  @map("razorpaypaymentid")
-  status            String   @default("PENDING")
-  createdAt         DateTime @default(now()) @map("createdat")
+  insurancefee      Int
+  platformfee       Int
+  razorpayorderid   String?
+  razorpaypaymentid String?
+  status            String   @default("PENDING") // PENDING | PAID | REFUNDED
+  createdat         DateTime @default(now())
 }
 
 model KYC {
   id              String   @id @default(uuid())
-  userId          String   @unique @map("userid")
-  user            User     @relation(fields: [userId], references: [id])
-  panUrl          String?  @map("panurl")
-  aadhaarFrontUrl String?  @map("aadhaarfronturl")
-  aadhaarBackUrl  String?  @map("aadhaarbackurl")
-  verified        String   @default("pending")
-  submittedAt     DateTime? @map("submittedat")
-  createdAt       DateTime @default(now()) @map("createdat")
+  userid          String   @unique
+  user            User     @relation(fields: [userid], references: [id])
+  panurl          String?
+  aadhaarfronturl String?
+  aadhaarbackurl  String?
+  verified        String   @default("pending") // pending | approved | rejected
+  submittedat     DateTime?
+  createdat       DateTime @default(now())
 }
 
 model InsurancePool {
@@ -121,26 +121,26 @@ model InsurancePool {
   balance   Int       @default(0)
   bookings  Booking[] @relation("BookingInsurance")
   issues    Issue[]   @relation("InsurancePoolIssues")
-  createdAt DateTime  @default(now()) @map("createdat")
-  updatedAt DateTime  @updatedAt @map("updatedat")
+  createdat DateTime  @default(now())
+  updatedat DateTime  @updatedAt
 }
 
 model Issue {
   id              String         @id @default(uuid())
-  bookingId       String?        @map("bookingid")
-  booking         Booking?       @relation(fields: [bookingId], references: [id])
-  userId          String         @map("userid")
-  user            User           @relation(fields: [userId], references: [id])
+  bookingid       String?
+  booking         Booking?       @relation(fields: [bookingid], references: [id])
+  userid          String
+  user            User           @relation(fields: [userid], references: [id])
   description     String
   photos          String[]
-  status          String         @default("OPEN")
-  resolutionNote  String?        @map("resolutionnote")
-  resolvedById    String?        @map("resolvedbyid")
-  resolvedBy      User?          @relation("IssueResolvedBy", fields: [resolvedById], references: [id])
-  insurancePoolId String?        @map("insurancepoolid")
-  insurancePool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancePoolId], references: [id])
-  createdAt       DateTime       @default(now()) @map("createdat")
-  updatedAt       DateTime       @updatedAt @map("updatedat")
+  status          String         @default("OPEN") // OPEN | APPROVED | REJECTED | RESOLVED
+  resolutionnote  String?
+  resolvedbyid    String?
+  resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
+  insurancepoolid String?
+  insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
+  createdat       DateTime       @default(now())
+  updatedat       DateTime       @updatedAt
 }
 
 //
@@ -148,21 +148,21 @@ model Issue {
 //
 model Conversation {
   id        String    @id @default(uuid())
-  ownerId   String    @map("ownerid")
-  renterId  String    @map("renterid")
+  ownerId   String
+  renterId  String
   owner     User      @relation("OwnerConversations", fields: [ownerId], references: [id])
   renter    User      @relation("RenterConversations", fields: [renterId], references: [id])
   messages  Message[]
-  createdAt DateTime  @default(now()) @map("createdat")
-  updatedAt DateTime  @updatedAt @map("updatedat")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Message {
   id             String       @id @default(uuid())
-  conversationId String       @map("conversationid")
+  conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
-  senderId       String       @map("senderid")
+  senderId       String
   sender         User         @relation(fields: [senderId], references: [id])
   text           String
-  createdAt      DateTime     @default(now()) @map("createdat")
-}
+  createdAt      DateTime     @default(now())
+}   
