@@ -11,31 +11,31 @@ const prisma = new PrismaClient();
  */
 router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { panUrl, aadhaarFrontUrl, aadhaarBackUrl } = req.body;
-    const userId = req.user?.id; // from JWT
+    const { panurl, aadhaarfronturl, aadhaarbackurl } = req.body;
+    const userid = req.user?.id; // from JWT
 
-    if (!userId) {
+    if (!userid) {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    if (!panUrl || !aadhaarFrontUrl || !aadhaarBackUrl) {
+    if (!panurl || !aadhaarfronturl || !aadhaarbackurl) {
       return res.status(400).json({ error: "All KYC documents are required" });
     }
 
     const kycRecord = await prisma.kYC.upsert({
-      where: { userid: userId },
+      where: { userid },
       update: {
-        panurl: panUrl,
-        aadhaarfronturl: aadhaarFrontUrl,
-        aadhaarbackurl: aadhaarBackUrl,
+        panurl,
+        aadhaarfronturl,
+        aadhaarbackurl,
         verified: "pending",
         submittedat: new Date(),
       },
       create: {
-        userid: userId,
-        panurl: panUrl,
-        aadhaarfronturl: aadhaarFrontUrl,
-        aadhaarbackurl: aadhaarBackUrl,
+        userid,
+        panurl,
+        aadhaarfronturl,
+        aadhaarbackurl,
         verified: "pending",
         submittedat: new Date(),
       },
