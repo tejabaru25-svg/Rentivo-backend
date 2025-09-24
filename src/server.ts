@@ -13,7 +13,6 @@ import kycRoutes from "./routes/kyc";           // ✅ KYC routes
 import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
 import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
 import devicesRouter from "./routes/devices";   // ✅ FCM device registration
-import chatRoutes from "./routes/chat";         // ✅ NEW: Chat routes
 import authenticateToken from "./authMiddleware"; // ✅ fixed export
 
 const app = express();
@@ -50,7 +49,6 @@ app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
 app.use("/api/kyc", kycRoutes);            // ✅ KYC
 app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
-app.use("/api/chat", chatRoutes);          // ✅ Chat conversations & messages
 app.use("/api/test", testRoutes);          // ✅ test utils
 app.use("/api/devices", authenticateToken, devicesRouter); // ✅ register devices
 
