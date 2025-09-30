@@ -16,8 +16,8 @@ model User {
   passwordhash    String
   role            String       @default("RENTER") // RENTER | OWNER | ADMIN
   kyc             KYC?
-  createdat       DateTime     @default(now())
-  updatedat       DateTime     @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   items           Item[]       @relation("owner_items")
   bookings        Booking[]
   payments        Payment[]
@@ -26,7 +26,7 @@ model User {
   resolvedIssues  Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
   devices         UserDevice[] // FCM device tokens
 
-  // 🔑 Added for password reset
+  // 🔑 For password reset
   resetToken       String?
   resetTokenExpiry DateTime?
 }
@@ -51,8 +51,8 @@ model Item {
   available    Boolean       @default(true)
   photos       String[]
   location     String
-  createdat    DateTime      @default(now())
-  updatedat    DateTime      @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   bookings     Booking[]
   availability Availability[]
 }
@@ -64,7 +64,7 @@ model Availability {
   startdate DateTime
   enddate   DateTime
   isbooked  Boolean  @default(false)
-  createdat DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Booking {
@@ -85,8 +85,8 @@ model Booking {
   insurancepoolid String?
   insurancepool   InsurancePool? @relation("BookingInsurance", fields: [insurancepoolid], references: [id])
   payment         Payment?
-  createdat       DateTime @default(now())
-  updatedat       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   issues          Issue[]
 }
 
@@ -102,7 +102,7 @@ model Payment {
   razorpayorderid   String?
   razorpaypaymentid String?
   status            String   @default("PENDING") // PENDING | PAID | REFUNDED
-  createdat         DateTime @default(now())
+  createdAt         DateTime @default(now())
 }
 
 model KYC {
@@ -113,8 +113,8 @@ model KYC {
   aadhaarfronturl String?
   aadhaarbackurl  String?
   verified        String   @default("pending") // pending | approved | rejected
-  submittedat     DateTime?
-  createdat       DateTime @default(now())
+  submittedAt     DateTime?
+  createdAt       DateTime @default(now())
 }
 
 model InsurancePool {
@@ -122,8 +122,8 @@ model InsurancePool {
   balance   Int       @default(0)
   bookings  Booking[] @relation("BookingInsurance")
   issues    Issue[]   @relation("InsurancePoolIssues")
-  createdat DateTime  @default(now())
-  updatedat DateTime  @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Issue {
@@ -140,6 +140,7 @@ model Issue {
   resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
   insurancepoolid String?
   insurancepool   InsurancePool? @relation("InsurancePoolIssues", fields: [insurancepoolid], references: [id])
-  createdat       DateTime       @default(now())
-  updatedat       DateTime       @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
+
