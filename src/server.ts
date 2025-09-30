@@ -46,7 +46,7 @@ app.get("/", (_req: Request, res: Response) => {
  * =====================
  */
 app.use("/api/auth", authRoutes);
-app.use("/api/auth", passwordRoutes);       // ✅ add forgot/reset password here
+app.use("/api/auth", passwordRoutes);       // ✅ forgot/reset password
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
 app.use("/api/kyc", kycRoutes);            // ✅ KYC
@@ -106,3 +106,4 @@ try {
   console.error("❌ Failed to start server:", err);
   process.exit(1); // force crash so Render logs it
 }
+
