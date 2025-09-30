@@ -13,6 +13,7 @@ import kycRoutes from "./routes/kyc";           // ✅ KYC routes
 import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
 import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
 import devicesRouter from "./routes/devices";   // ✅ FCM device registration
+import passwordRoutes from "./routes/password"; // ✅ Forgot/reset password routes
 import authenticateToken from "./authMiddleware"; // ✅ fixed export
 
 const app = express();
@@ -45,6 +46,7 @@ app.get("/", (_req: Request, res: Response) => {
  * =====================
  */
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", passwordRoutes);       // ✅ add forgot/reset password here
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
 app.use("/api/kyc", kycRoutes);            // ✅ KYC
