@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs"; // ✅ use bcryptjs (installed in package.json)
 import { sendEmail } from "../utils/mailer"; // Already exists in Rentivo backend
 
 const prisma = new PrismaClient();
