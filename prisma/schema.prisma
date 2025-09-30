@@ -9,22 +9,26 @@ datasource db {
 }
 
 model User {
-  id             String       @id @default(uuid())
-  name           String?
-  email          String?      @unique
-  phone          String?      @unique
-  passwordhash   String
-  role           String       @default("RENTER") // RENTER | OWNER | ADMIN
-  kyc            KYC?
-  createdat      DateTime     @default(now())
-  updatedat      DateTime     @updatedAt
-  items          Item[]       @relation("owner_items")
-  bookings       Booking[]
-  payments       Payment[]
-  issues         Issue[]      // issues raised by this user
-  isverified     Boolean      @default(false)
-  resolvedIssues Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
-  devices        UserDevice[] // FCM device tokens
+  id              String       @id @default(uuid())
+  name            String?
+  email           String?      @unique
+  phone           String?      @unique
+  passwordhash    String
+  role            String       @default("RENTER") // RENTER | OWNER | ADMIN
+  kyc             KYC?
+  createdat       DateTime     @default(now())
+  updatedat       DateTime     @updatedAt
+  items           Item[]       @relation("owner_items")
+  bookings        Booking[]
+  payments        Payment[]
+  issues          Issue[]      // issues raised by this user
+  isverified      Boolean      @default(false)
+  resolvedIssues  Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
+  devices         UserDevice[] // FCM device tokens
+
+  // 🔑 Added for password reset
+  resetToken       String?
+  resetTokenExpiry DateTime?
 }
 
 model UserDevice {
