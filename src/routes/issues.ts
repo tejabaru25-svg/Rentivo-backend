@@ -86,7 +86,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
         },
       });
 
-      let insurancePoolUpdated = null;
+      let insurancePoolUpdated = null; // ✅ let Prisma infer type
 
       if (status === "APPROVED" && deductAmount && Number(deductAmount) > 0) {
         const amount = Math.floor(Number(deductAmount));
