@@ -1,5 +1,5 @@
 import express, { Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, InsurancePool } from "@prisma/client"; // ✅ added InsurancePool
 import authenticateToken, { AuthRequest } from "../authMiddleware";
 import { sendEmail } from "../utils/mailer";
 import { sendSMS } from "../utils/sms";
@@ -86,7 +86,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
         },
       });
 
-      let insurancePoolUpdated = null; // ✅ let Prisma infer type
+      let insurancePoolUpdated: InsurancePool | null = null; // ✅ fixed type
 
       if (status === "APPROVED" && deductAmount && Number(deductAmount) > 0) {
         const amount = Math.floor(Number(deductAmount));
@@ -198,3 +198,4 @@ router.get("/my", authenticateToken, async (req: AuthRequest, res: Response) => 
 });
 
 export default router;
+
