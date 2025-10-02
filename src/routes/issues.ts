@@ -86,13 +86,12 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
         },
       });
 
-      let insurancePoolUpdated: { id: string; createdat: Date; updatedat: Date; balance: number } | null =
-        null;
+      let insurancePoolUpdated = null;
 
       if (status === "APPROVED" && deductAmount && Number(deductAmount) > 0) {
         const amount = Math.floor(Number(deductAmount));
 
-        let pool = await tx.insurancePool.findFirst({ orderBy: { createdat: "asc" } });
+        let pool = await tx.insurancePool.findFirst({ orderBy: { createdAt: "asc" } });
         if (!pool) pool = await tx.insurancePool.create({ data: { balance: 0 } });
 
         insurancePoolUpdated = await tx.insurancePool.update({
@@ -165,7 +164,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
 
     const issues = await prisma.issue.findMany({
       include: { booking: true, user: true, resolvedby: true, insurancepool: true },
-      orderBy: { createdat: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return res.json(issues);
@@ -188,7 +187,7 @@ router.get("/my", authenticateToken, async (req: AuthRequest, res: Response) => 
     const issues = await prisma.issue.findMany({
       where: { userid: user.id },
       include: { booking: true, resolvedby: true, insurancepool: true },
-      orderBy: { createdat: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return res.json(issues);
