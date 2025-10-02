@@ -16,6 +16,10 @@ import devicesRouter from "./routes/devices";   // ✅ FCM device registration
 import passwordRoutes from "./routes/password"; // ✅ Forgot/reset password routes
 import authenticateToken from "./authMiddleware"; // ✅ fixed export
 
+// 🟢 NEW: Home page backend routes
+import userRoutes from "./routes/user";         // ✅ location APIs
+// (later we’ll add notifications.ts and search.ts)
+
 const app = express();
 
 /**
@@ -53,6 +57,9 @@ app.use("/api/kyc", kycRoutes);            // ✅ KYC
 app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
 app.use("/api/test", testRoutes);          // ✅ test utils
 app.use("/api/devices", authenticateToken, devicesRouter); // ✅ register devices
+
+// 🟢 NEW: Home Page APIs
+app.use("/api/user", userRoutes);          // ✅ location APIs
 
 /**
  * =====================
