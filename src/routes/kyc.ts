@@ -11,12 +11,12 @@ const prisma = new PrismaClient();
  */
 router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { panurl, aadhaarfronturl, aadhaarbackurl } = req.body;
-    const userid = req.user?.id; // from JWT
-
-    if (!userid) {
+    if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+
+    const { panurl, aadhaarfronturl, aadhaarbackurl } = req.body;
+    const userid = req.user.id; // from JWT
 
     if (!panurl || !aadhaarfronturl || !aadhaarbackurl) {
       return res.status(400).json({ error: "All KYC documents are required" });
@@ -29,7 +29,7 @@ router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response
         aadhaarfronturl,
         aadhaarbackurl,
         verified: "pending",
-        submittedat: new Date(),
+        submittedAt: new Date(), // ✅ FIXED camelCase
       },
       create: {
         userid,
@@ -37,7 +37,7 @@ router.post("/submit", authenticateToken, async (req: AuthRequest, res: Response
         aadhaarfronturl,
         aadhaarbackurl,
         verified: "pending",
-        submittedat: new Date(),
+        submittedAt: new Date(), // ✅ FIXED camelCase
       },
     });
 
