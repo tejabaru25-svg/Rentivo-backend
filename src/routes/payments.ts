@@ -32,8 +32,7 @@ if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
  */
 router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const caller = req.user;
-    if (!caller) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
@@ -50,8 +49,6 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
     });
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-    // Optional: ensure caller is either the renter or the owner depending on flow
-    // (we'll not enforce here — assume frontend passes correct userid)
     // Create Razorpay order only if razorpay configured
     let order: any = null;
     if (razorpay) {
@@ -90,8 +87,7 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
  */
 router.post("/confirm", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const caller = req.user;
-    if (!caller) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
 
@@ -143,7 +139,6 @@ router.post("/confirm", authenticateToken, async (req: AuthRequest, res: Respons
     const item = booking?.item;
     const amount = updated.amount;
 
-    // send e-mails (wrap each in try/catch so one failing notifier doesn't break response)
     try {
       if (renter?.email) {
         await sendEmail(
@@ -168,7 +163,6 @@ router.post("/confirm", authenticateToken, async (req: AuthRequest, res: Respons
       console.error("Email to owner failed:", e);
     }
 
-    // send SMS
     try {
       if (renter?.phone) {
         await sendSMS(renter.phone, `✅ Payment of ₹${amount} received for booking ${booking?.id}`);
@@ -206,7 +200,7 @@ router.get("/", async (_req, res: Response) => {
   try {
     const payments = await prisma.payment.findMany({
       include: { booking: true, user: true },
-      orderBy: { createdat: "desc" },
+      orderBy: { createdAt: "desc" }, // ✅ FIXED camelCase
     });
     return res.json(payments);
   } catch (err: any) {
