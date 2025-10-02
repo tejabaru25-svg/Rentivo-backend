@@ -1,6 +1,6 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary"   // force binary engine for Render (fix WASM build error)
+  engineType = "binary"   // Render fix
 }
 
 datasource db {
@@ -25,6 +25,12 @@ model User {
   isverified      Boolean      @default(false)
   resolvedIssues  Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
   devices         UserDevice[] // FCM device tokens
+
+  // Location fields (for Home Page)
+  city            String?
+  state           String?
+  latitude        Float?
+  longitude       Float?
 
   // 🔑 For password reset
   resetToken       String?
@@ -143,4 +149,5 @@ model Issue {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
+
 
