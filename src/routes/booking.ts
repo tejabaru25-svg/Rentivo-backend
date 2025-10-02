@@ -24,6 +24,8 @@ const razorpay = new Razorpay({
 // POST /api/bookings/create → create booking
 router.post("/create", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
     const { itemid, renterid, startdate, enddate } = req.body;
 
     if (!itemid || !renterid || !startdate || !enddate) {
@@ -57,8 +59,13 @@ router.post(
   "/items/:id/availability",
   authenticateToken,
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { startdate, enddate } = req.body;
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const { startdate, enddate } = req.body;
       const availability = await prisma.availability.create({
         data: {
           itemid: req.params.id,
@@ -93,8 +100,13 @@ router.patch(
   "/:id/handover",
   authenticateToken,
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { handoverphoto, handovernotes } = req.body;
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const { handoverphoto, handovernotes } = req.body;
       const booking = await prisma.booking.update({
         where: { id: req.params.id },
         data: { handoverphoto, handovernotes, status: "ONGOING" },
@@ -111,8 +123,13 @@ router.patch(
   "/:id/return",
   authenticateToken,
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { returnphoto, returnnotes } = req.body;
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const { returnphoto, returnnotes } = req.body;
       const booking = await prisma.booking.update({
         where: { id: req.params.id },
         data: { returnphoto, returnnotes, status: "COMPLETED" },
@@ -129,8 +146,13 @@ router.patch(
   "/:id/extend",
   authenticateToken,
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { extendeduntil } = req.body;
     try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const { extendeduntil } = req.body;
       const booking = await prisma.booking.update({
         where: { id: req.params.id },
         data: { extendeduntil: new Date(extendeduntil) },
@@ -165,6 +187,8 @@ router.get(
 // POST /api/bookings/pay
 router.post("/pay", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
 
     if (!bookingid || !userid || !amount) {
@@ -203,6 +227,8 @@ router.post("/pay", authenticateToken, async (req: AuthRequest, res: Response) =
 // POST /api/bookings/pay/confirm
 router.post("/pay/confirm", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
 
     if (!razorpayorderid || !razorpaypaymentid || !signature) {
@@ -294,7 +320,7 @@ router.get("/pay", async (_req: Request, res: Response) => {
   try {
     const payments = await prisma.payment.findMany({
       include: { booking: true, user: true },
-      orderBy: { createdat: "desc" },
+      orderBy: { createdAt: "desc" }, // ✅ FIXED camelCase
     });
     return res.json(payments);
   } catch (err: any) {
