@@ -23,12 +23,12 @@ const ALLOWED_UPDATE_FIELDS = new Set([
  */
 router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, category, priceperday, photos, location } = req.body;
-    const userid = req.user?.id; // JWT user id
-
-    if (!userid) {
+    if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+
+    const { title, description, category, priceperday, photos, location } = req.body;
+    const userid = req.user.id; // ✅ safe now
 
     if (!title || !category || priceperday === undefined || !location) {
       return res
@@ -67,7 +67,7 @@ router.get("/", async (_req, res: Response) => {
       include: {
         owner: { select: { id: true, name: true, email: true, phone: true } },
       },
-      orderBy: { createdat: "desc" }, // ✅ lowercase field
+      orderBy: { createdAt: "desc" }, // ✅ FIXED camelCase
     });
     return res.json(items);
   } catch (err: any) {
@@ -104,12 +104,12 @@ router.get("/:id", async (req, res: Response) => {
  */
 router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const userid = req.user?.id;
-
-    if (!userid) {
+    if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+
+    const { id } = req.params;
+    const userid = req.user.id;
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
@@ -159,12 +159,12 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
  */
 router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const userid = req.user?.id;
-
-    if (!userid) {
+    if (!req.user) {
       return res.status(401).json({ error: "User not authenticated" });
     }
+
+    const { id } = req.params;
+    const userid = req.user.id;
 
     const item = await prisma.item.findUnique({ where: { id } });
     if (!item) return res.status(404).json({ error: "Item not found" });
@@ -180,4 +180,5 @@ router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response)
 });
 
 export default router;
+
 
