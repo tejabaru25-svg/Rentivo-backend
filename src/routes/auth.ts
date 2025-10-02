@@ -19,9 +19,9 @@ router.get("/debug", async (_req, res) => {
         name: true, 
         email: true, 
         phone: true, 
-        createdat: true,   // ✅ lowercase to match schema
-        updatedat: true,   // ✅ lowercase to match schema
-        isverified: true,  // ✅ lowercase to match schema
+        createdAt: true,   // ✅ fixed camelCase
+        updatedAt: true,   // ✅ fixed camelCase
+        isverified: true,  // ✅ field is correct in schema
         role: true 
       }
     });
@@ -66,8 +66,8 @@ router.post("/signup", async (req, res) => {
         name,
         email,
         phone,
-        passwordhash: hash,  // ✅ lowercase column
-        role: "RENTER",      // ✅ default role as plain String
+        passwordhash: hash,  // ✅ matches schema
+        role: "RENTER",      // ✅ default role as string
       },
     });
 
@@ -96,14 +96,14 @@ router.post("/login", async (req, res) => {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ lowercase
+    const isMatch = await bcrypt.compare(password, user.passwordhash); // ✅ matches schema
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
 
     // Generate JWT
     const token = jwt.sign(
-      { id: user.id, role: user.role }, // ✅ role is String
+      { id: user.id, role: user.role },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -116,3 +116,4 @@ router.post("/login", async (req, res) => {
 });
 
 export default router;
+
