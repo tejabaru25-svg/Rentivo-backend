@@ -149,5 +149,3 @@ model Issue {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
-
-
