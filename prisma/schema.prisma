@@ -189,3 +189,10 @@ model SupportTicket {
   updatedAt   DateTime @updatedAt
 }
 
+model TopSearch {
+  term       String   @id
+  count      Int      @default(1)
+  lastUsedAt DateTime @default(now())
+}
+
+
