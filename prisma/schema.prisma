@@ -1,12 +1,16 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary" // ✅ Binary engine for Render compatibility
+  engineType = "binary" // ✅ Binary engine for Render compatibility (Render hosting)
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+/* ===========================
+   USER & AUTHENTICATION MODELS
+   =========================== */
 
 model User {
   id               String        @id @default(uuid())
@@ -52,6 +56,10 @@ model UserDevice {
   createdAt DateTime @default(now())
 }
 
+/* ===========================
+   ITEMS & AVAILABILITY
+   =========================== */
+
 model Item {
   id           String        @id @default(uuid())
   ownerid      String
@@ -78,6 +86,10 @@ model Availability {
   isbooked  Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+/* ===========================
+   BOOKINGS & PAYMENTS
+   =========================== */
 
 model Booking {
   id              String         @id @default(uuid())
@@ -117,6 +129,10 @@ model Payment {
   createdAt         DateTime @default(now())
 }
 
+/* ===========================
+   VERIFICATION & INSURANCE
+   =========================== */
+
 model KYC {
   id              String   @id @default(uuid())
   userid          String   @unique
@@ -138,6 +154,10 @@ model InsurancePool {
   updatedAt DateTime  @updatedAt
 }
 
+/* ===========================
+   ISSUES & SUPPORT
+   =========================== */
+
 model Issue {
   id              String         @id @default(uuid())
   bookingid       String?
@@ -155,6 +175,21 @@ model Issue {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  subject     String
+  description String
+  status      String   @default("open") // open | closed | escalated
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/* ===========================
+   NOTIFICATIONS & CHAT
+   =========================== */
 
 model Notification {
   id          String   @id @default(uuid())
@@ -178,21 +213,19 @@ model ChatMessage {
   createdAt   DateTime @default(now())
 }
 
-model SupportTicket {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  subject     String
-  description String
-  status      String   @default("open") // open | closed | escalated
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+/* ===========================
+   SEARCH ANALYTICS (Home Page)
+   =========================== */
 
 model TopSearch {
-  term       String   @id
-  count      Int      @default(1)
-  lastUsedAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  keyword     String   @unique
+  searchCount Int      @default(1)
+  lastUsedAt  DateTime @default(now())
+
+  @@index([keyword])
+  @@map("top_searches") // optional custom table name for clarity
 }
+
 
 
