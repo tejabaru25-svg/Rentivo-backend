@@ -8,16 +8,16 @@ import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
-import bookingRoutes from "./routes/booking";   // ✅ bookings + payments
-import kycRoutes from "./routes/kyc";           // ✅ KYC routes
-import issueRoutes from "./routes/issues";      // ✅ Issues & disputes routes
-import testRoutes from "./routes/test";         // ✅ Test email + SMS routes
-import devicesRouter from "./routes/devices";   // ✅ FCM device registration
-import passwordRoutes from "./routes/password"; // ✅ Forgot/reset password routes
-import authenticateToken from "./authMiddleware"; // ✅ fixed export
+import bookingRoutes from "./routes/booking";    // ✅ includes both bookings + payments
+import kycRoutes from "./routes/kyc";
+import issueRoutes from "./routes/issues";
+import testRoutes from "./routes/test";
+import devicesRouter from "./routes/devices";
+import passwordRoutes from "./routes/password";
+import authenticateToken from "./authMiddleware";
 
 // 🟢 NEW: Home page backend routes
-import userRoutes from "./routes/user";         // ✅ location APIs
+import userRoutes from "./routes/user";          // ✅ location APIs
 // (later we’ll add notifications.ts and search.ts)
 
 const app = express();
@@ -29,7 +29,7 @@ const app = express();
  */
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*", // ⚠️ allow all for now, lock down later
+    origin: process.env.FRONTEND_URL || "*", // allow all for now
     credentials: true,
   })
 );
@@ -50,16 +50,14 @@ app.get("/", (_req: Request, res: Response) => {
  * =====================
  */
 app.use("/api/auth", authRoutes);
-app.use("/api/auth", passwordRoutes);       // ✅ forgot/reset password
+app.use("/api/auth", passwordRoutes);        // ✅ forgot/reset password
 app.use("/api/items", itemRoutes);
-app.use("/api/bookings", bookingRoutes);   // ✅ bookings + payments
-app.use("/api/kyc", kycRoutes);            // ✅ KYC
-app.use("/api/issues", issueRoutes);       // ✅ issues & disputes
-app.use("/api/test", testRoutes);          // ✅ test utils
-app.use("/api/devices", authenticateToken, devicesRouter); // ✅ register devices
-
-// 🟢 NEW: Home Page APIs
-app.use("/api/user", userRoutes);          // ✅ location APIs
+app.use("/api/bookings", bookingRoutes);     // ✅ bookings + payments
+app.use("/api/kyc", kycRoutes);
+app.use("/api/issues", issueRoutes);
+app.use("/api/test", testRoutes);
+app.use("/api/devices", authenticateToken, devicesRouter);
+app.use("/api/user", userRoutes);            // ✅ location APIs
 
 /**
  * =====================
@@ -103,14 +101,10 @@ app.get("/debug/env", (_req: Request, res: Response) => {
  */
 const port = process.env.PORT || 4000;
 
-try {
-  app.listen(port, () => {
-    console.log("✅ Rentivo backend started successfully");
-    console.log(`🚀 Listening on port: ${port}`);
-    console.log("🌍 Health check available at /");
-  });
-} catch (err) {
-  console.error("❌ Failed to start server:", err);
-  process.exit(1); // force crash so Render logs it
-}
+app.listen(port, () => {
+  console.log("✅ Rentivo backend started successfully");
+  console.log(`🚀 Listening on port: ${port}`);
+  console.log("🌍 Health check available at /");
+});
+
 
