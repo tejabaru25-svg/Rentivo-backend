@@ -1,4 +1,4 @@
-import express, { Response } from "express";
+import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import authenticateToken, { AuthRequest } from "../authMiddleware";
 
@@ -6,54 +6,54 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 /**
- * -------------------
- * Get user location
- * -------------------
+ * ---------------------
+ * GET /api/user/location
+ * Get user's saved location (city, state, lat, long)
+ * ---------------------
  */
-router.get("/location", authenticateToken, async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+router.get("/location", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest; // ✅ safely cast here
 
+  try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: authReq.user.id },
       select: { city: true, state: true, latitude: true, longitude: true },
     });
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
-    console.error("Get location error:", error);
-    res.status(500).json({ error: "Error fetching location" });
+    console.error("Location fetch error:", error);
+    return res.status(500).json({ error: "Error fetching location" });
   }
 });
 
 /**
- * -------------------
- * Update user location
- * -------------------
+ * ---------------------
+ * POST /api/user/location
+ * Update user location (city, state, lat, long)
+ * ---------------------
  */
-router.post("/location", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/location", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest; // ✅ safely cast again
+  const { city, state, latitude, longitude } = req.body;
+
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { city, state, latitude, longitude } = req.body;
-
     const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: authReq.user.id },
       data: { city, state, latitude, longitude },
       select: { city: true, state: true, latitude: true, longitude: true },
     });
 
-    res.json({ message: "Location updated", location: updatedUser });
+    return res.json({ message: "Location updated", location: updatedUser });
   } catch (error) {
-    console.error("Update location error:", error);
-    res.status(500).json({ error: "Error updating location" });
+    console.error("Location update error:", error);
+    return res.status(500).json({ error: "Error updating location" });
   }
 });
 
 export default router;
+
