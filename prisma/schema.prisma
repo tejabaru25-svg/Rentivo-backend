@@ -1,6 +1,6 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary" // ✅ Binary engine for Render compatibility (Render hosting)
+  engineType = "binary"
 }
 
 datasource db {
@@ -8,39 +8,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* ===========================
-   USER & AUTHENTICATION MODELS
-   =========================== */
-
 model User {
   id               String        @id @default(uuid())
   name             String?
   email            String?       @unique
   phone            String?       @unique
   passwordhash     String
-  role             String        @default("RENTER") // RENTER | OWNER | ADMIN
+  role             String        @default("RENTER")
   kyc              KYC?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   items            Item[]        @relation("owner_items")
   bookings         Booking[]
   payments         Payment[]
-  issues           Issue[]       // Issues raised by this user
+  issues           Issue[]
   isverified       Boolean       @default(false)
   resolvedIssues   Issue[]       @relation("IssueResolvedBy")
-  devices          UserDevice[]  // FCM device tokens
+  devices          UserDevice[]
 
-  // 🌍 Location fields (for Home Page)
   city             String?
   state            String?
   latitude         Float?
   longitude        Float?
 
-  // 🔑 For password reset
   resetToken       String?
   resetTokenExpiry DateTime?
 
-  // 🛎️ Relationships for Notifications & Chat
   notifications    Notification[]
   messagesSent     ChatMessage[] @relation("MessagesSent")
   messagesReceived ChatMessage[] @relation("MessagesReceived")
@@ -52,13 +45,9 @@ model UserDevice {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
-  platform  String   // ios | android | web
+  platform  String
   createdAt DateTime @default(now())
 }
-
-/* ===========================
-   ITEMS & AVAILABILITY
-   =========================== */
 
 model Item {
   id           String        @id @default(uuid())
@@ -87,10 +76,6 @@ model Availability {
   createdAt DateTime @default(now())
 }
 
-/* ===========================
-   BOOKINGS & PAYMENTS
-   =========================== */
-
 model Booking {
   id              String         @id @default(uuid())
   itemid          String
@@ -99,7 +84,7 @@ model Booking {
   renter          User           @relation(fields: [renterid], references: [id])
   startdate       DateTime
   enddate         DateTime
-  status          String         @default("PENDING") // PENDING | CONFIRMED | ONGOING | COMPLETED | CANCELLED
+  status          String         @default("PENDING")
   handoverphoto   String?
   handovernotes   String?
   returnphoto     String?
@@ -125,13 +110,9 @@ model Payment {
   platformfee       Int
   razorpayorderid   String?
   razorpaypaymentid String?
-  status            String   @default("PENDING") // PENDING | PAID | REFUNDED
+  status            String   @default("PENDING")
   createdAt         DateTime @default(now())
 }
-
-/* ===========================
-   VERIFICATION & INSURANCE
-   =========================== */
 
 model KYC {
   id              String   @id @default(uuid())
@@ -140,7 +121,7 @@ model KYC {
   panurl          String?
   aadhaarfronturl String?
   aadhaarbackurl  String?
-  verified        String   @default("pending") // pending | approved | rejected
+  verified        String   @default("pending")
   submittedAt     DateTime?
   createdAt       DateTime @default(now())
 }
@@ -154,10 +135,6 @@ model InsurancePool {
   updatedAt DateTime  @updatedAt
 }
 
-/* ===========================
-   ISSUES & SUPPORT
-   =========================== */
-
 model Issue {
   id              String         @id @default(uuid())
   bookingid       String?
@@ -166,7 +143,7 @@ model Issue {
   user            User           @relation(fields: [userid], references: [id])
   description     String
   photos          String[]
-  status          String         @default("OPEN") // OPEN | APPROVED | REJECTED | RESOLVED
+  status          String         @default("OPEN")
   resolutionnote  String?
   resolvedbyid    String?
   resolvedby      User?          @relation("IssueResolvedBy", fields: [resolvedbyid], references: [id])
@@ -176,56 +153,46 @@ model Issue {
   updatedAt       DateTime       @updatedAt
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  sender     User     @relation("MessagesSent", fields: [senderId], references: [id])
+  receiver   User     @relation("MessagesReceived", fields: [receiverId], references: [id])
+  message    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
 model SupportTicket {
   id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   subject     String
   description String
-  status      String   @default("open") // open | closed | escalated
+  status      String   @default("open")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
-
-/* ===========================
-   NOTIFICATIONS & CHAT
-   =========================== */
-
-model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  title       String
-  message     String
-  type        String   // e.g., "booking", "payment", "system"
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-}
-
-model ChatMessage {
-  id          String   @id @default(uuid())
-  senderId    String
-  receiverId  String
-  sender      User     @relation("MessagesSent", fields: [senderId], references: [id])
-  receiver    User     @relation("MessagesReceived", fields: [receiverId], references: [id])
-  message     String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-}
-
-/* ===========================
-   SEARCH ANALYTICS (Home Page)
-   =========================== */
 
 model TopSearch {
   id          String   @id @default(uuid())
   keyword     String   @unique
   searchCount Int      @default(1)
   lastUsedAt  DateTime @default(now())
-
-  @@index([keyword])
-  @@map("top_searches") // optional custom table name for clarity
 }
+
 
 
 
