@@ -1,6 +1,6 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary"   // Render fix
+  engineType = "binary" // ✅ Binary engine for Render compatibility
 }
 
 datasource db {
@@ -9,32 +9,38 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  name            String?
-  email           String?      @unique
-  phone           String?      @unique
-  passwordhash    String
-  role            String       @default("RENTER") // RENTER | OWNER | ADMIN
-  kyc             KYC?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  items           Item[]       @relation("owner_items")
-  bookings        Booking[]
-  payments        Payment[]
-  issues          Issue[]      // issues raised by this user
-  isverified      Boolean      @default(false)
-  resolvedIssues  Issue[]      @relation("IssueResolvedBy") // admin dispute resolution
-  devices         UserDevice[] // FCM device tokens
+  id               String        @id @default(uuid())
+  name             String?
+  email            String?       @unique
+  phone            String?       @unique
+  passwordhash     String
+  role             String        @default("RENTER") // RENTER | OWNER | ADMIN
+  kyc              KYC?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  items            Item[]        @relation("owner_items")
+  bookings         Booking[]
+  payments         Payment[]
+  issues           Issue[]       // Issues raised by this user
+  isverified       Boolean       @default(false)
+  resolvedIssues   Issue[]       @relation("IssueResolvedBy")
+  devices          UserDevice[]  // FCM device tokens
 
-  // Location fields (for Home Page)
-  city            String?
-  state           String?
-  latitude        Float?
-  longitude       Float?
+  // 🌍 Location fields (for Home Page)
+  city             String?
+  state            String?
+  latitude         Float?
+  longitude        Float?
 
   // 🔑 For password reset
   resetToken       String?
   resetTokenExpiry DateTime?
+
+  // 🛎️ Relationships for Notifications & Chat
+  notifications    Notification[]
+  messagesSent     ChatMessage[] @relation("MessagesSent")
+  messagesReceived ChatMessage[] @relation("MessagesReceived")
+  tickets          SupportTicket[]
 }
 
 model UserDevice {
@@ -42,7 +48,7 @@ model UserDevice {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
-  platform  String   // "ios" | "android" | "web"
+  platform  String   // ios | android | web
   createdAt DateTime @default(now())
 }
 
@@ -91,8 +97,8 @@ model Booking {
   insurancepoolid String?
   insurancepool   InsurancePool? @relation("BookingInsurance", fields: [insurancepoolid], references: [id])
   payment         Payment?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   issues          Issue[]
 }
 
@@ -149,3 +155,37 @@ model Issue {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  type        String   // e.g., "booking", "payment", "system"
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  senderId    String
+  receiverId  String
+  sender      User     @relation("MessagesSent", fields: [senderId], references: [id])
+  receiver    User     @relation("MessagesReceived", fields: [receiverId], references: [id])
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  subject     String
+  description String
+  status      String   @default("open") // open | closed | escalated
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
