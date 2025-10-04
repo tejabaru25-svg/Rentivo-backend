@@ -1,5 +1,5 @@
-import express, { Response } from "express";
-import { PrismaClient, InsurancePool } from "@prisma/client"; // ✅ added InsurancePool
+import express, { Request, Response } from "express";
+import { PrismaClient, InsurancePool } from "@prisma/client";
 import authenticateToken, { AuthRequest } from "../authMiddleware";
 import { sendEmail } from "../utils/mailer";
 import { sendSMS } from "../utils/sms";
@@ -12,10 +12,11 @@ const prisma = new PrismaClient();
  * Owner: Create Issue
  * ======================
  */
-router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { bookingid, description, photos } = req.body;
-    const user = req.user;
+    const user = authReq.user;
 
     if (!bookingid || !description) {
       return res.status(400).json({ error: "bookingid and description are required" });
@@ -55,10 +56,11 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
  * Admin: Resolve Issue
  * ======================
  */
-router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.patch("/:id/resolve", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { status, resolutionnote, deductAmount } = req.body;
-    const user = req.user;
+    const user = authReq.user;
 
     if (user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Only admins can resolve issues" });
@@ -86,7 +88,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
         },
       });
 
-      let insurancePoolUpdated: InsurancePool | null = null; // ✅ fixed type
+      let insurancePoolUpdated: InsurancePool | null = null;
 
       if (status === "APPROVED" && deductAmount && Number(deductAmount) > 0) {
         const amount = Math.floor(Number(deductAmount));
@@ -108,7 +110,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
       return { updatedIssue, insurancePoolUpdated };
     });
 
-    // Notify owner & renter (best-effort)
+    // Notify owner & renter
     const booking = issue.booking;
     const owner = booking?.item?.owner;
     const renter = booking?.renter;
@@ -142,7 +144,7 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
     }
 
     return res.json({
-      message: "Issue resolved",
+      message: "Issue resolved successfully",
       issue: result.updatedIssue,
       insurancePool: result.insurancePoolUpdated,
     });
@@ -157,9 +159,10 @@ router.patch("/:id/resolve", authenticateToken, async (req: AuthRequest, res: Re
  * Admin: List All Issues
  * ======================
  */
-router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get("/", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    const user = req.user;
+    const user = authReq.user;
     if (user?.role !== "ADMIN") return res.status(403).json({ error: "Only admins can view all issues" });
 
     const issues = await prisma.issue.findMany({
@@ -179,9 +182,10 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
  * Owner: List My Issues
  * ======================
  */
-router.get("/my", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get("/my", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    const user = req.user;
+    const user = authReq.user;
     if (user?.role !== "OWNER") return res.status(403).json({ error: "Only owners can view their issues" });
 
     const issues = await prisma.issue.findMany({
@@ -198,4 +202,5 @@ router.get("/my", authenticateToken, async (req: AuthRequest, res: Response) => 
 });
 
 export default router;
+
 
