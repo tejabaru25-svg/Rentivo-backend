@@ -9,7 +9,7 @@ import authenticateToken, { AuthRequest } from "../authMiddleware";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// ✅ Razorpay client
+// ✅ Initialize Razorpay client safely
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID as string,
   key_secret: process.env.RAZORPAY_KEY_SECRET as string,
@@ -17,21 +17,20 @@ const razorpay = new Razorpay({
 
 /**
  * ======================
- * Booking APIs
+ * BOOKING APIs
  * ======================
  */
 
-// POST /api/bookings/create → create booking
-router.post("/create", authenticateToken, async (req: AuthRequest, res: Response) => {
+// ✅ Create Booking
+router.post("/create", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
     const { itemid, renterid, startdate, enddate } = req.body;
 
     if (!itemid || !renterid || !startdate || !enddate) {
-      return res.status(400).json({
-        error: "itemid, renterid, startdate, enddate are required",
-      });
+      return res.status(400).json({ error: "itemid, renterid, startdate, enddate are required" });
     }
 
     const booking = await prisma.booking.create({
@@ -47,154 +46,123 @@ router.post("/create", authenticateToken, async (req: AuthRequest, res: Response
     return res.json({ message: "Booking created", booking });
   } catch (err: any) {
     console.error("Booking create error:", err);
-    return res.status(500).json({
-      error: "Failed to create booking",
-      details: err.message,
-    });
+    return res.status(500).json({ error: "Failed to create booking", details: err.message });
   }
 });
 
-// POST /api/bookings/items/:id/availability
-router.post(
-  "/items/:id/availability",
-  authenticateToken,
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+// ✅ Add Availability
+router.post("/items/:id/availability", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
-      const { startdate, enddate } = req.body;
-      const availability = await prisma.availability.create({
-        data: {
-          itemid: req.params.id,
-          startdate: new Date(startdate),
-          enddate: new Date(enddate),
-        },
-      });
-      res.json(availability);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const { startdate, enddate } = req.body;
+    const availability = await prisma.availability.create({
+      data: {
+        itemid: req.params.id,
+        startdate: new Date(startdate),
+        enddate: new Date(enddate),
+      },
+    });
+
+    return res.json({ message: "Availability added", availability });
+  } catch (err: any) {
+    console.error("Availability add error:", err);
+    return res.status(400).json({ error: err.message });
   }
-);
+});
 
-// GET /api/bookings/items/:id/availability
-router.get(
-  "/items/:id/availability",
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const availability = await prisma.availability.findMany({
-        where: { itemid: req.params.id },
-      });
-      res.json(availability);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+// ✅ Get Availability
+router.get("/items/:id/availability", async (req: Request, res: Response) => {
+  try {
+    const availability = await prisma.availability.findMany({
+      where: { itemid: req.params.id },
+    });
+    res.json(availability);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
-// PATCH /api/bookings/:id/handover
-router.patch(
-  "/:id/handover",
-  authenticateToken,
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+// ✅ Handover Booking
+router.patch("/:id/handover", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
-      const { handoverphoto, handovernotes } = req.body;
-      const booking = await prisma.booking.update({
-        where: { id: req.params.id },
-        data: { handoverphoto, handovernotes, status: "ONGOING" },
-      });
-      res.json(booking);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const { handoverphoto, handovernotes } = req.body;
+    const booking = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: { handoverphoto, handovernotes, status: "ONGOING" },
+    });
+
+    return res.json({ message: "Booking handover completed", booking });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
-// PATCH /api/bookings/:id/return
-router.patch(
-  "/:id/return",
-  authenticateToken,
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+// ✅ Return Booking
+router.patch("/:id/return", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
-      const { returnphoto, returnnotes } = req.body;
-      const booking = await prisma.booking.update({
-        where: { id: req.params.id },
-        data: { returnphoto, returnnotes, status: "COMPLETED" },
-      });
-      res.json(booking);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const { returnphoto, returnnotes } = req.body;
+    const booking = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: { returnphoto, returnnotes, status: "COMPLETED" },
+    });
+
+    return res.json({ message: "Booking marked as completed", booking });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
-// PATCH /api/bookings/:id/extend
-router.patch(
-  "/:id/extend",
-  authenticateToken,
-  async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
+// ✅ Extend Booking
+router.patch("/:id/extend", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
-      const { extendeduntil } = req.body;
-      const booking = await prisma.booking.update({
-        where: { id: req.params.id },
-        data: { extendeduntil: new Date(extendeduntil) },
-      });
-      res.json(booking);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+    const { extendeduntil } = req.body;
+    const booking = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: { extendeduntil: new Date(extendeduntil) },
+    });
+
+    return res.json({ message: "Booking extended", booking });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
-// GET /api/bookings/admin/insurance
-router.get(
-  "/admin/insurance",
-  authenticateToken,
-  async (_req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const pool = await prisma.insurancePool.findMany();
-      res.json(pool);
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
+// ✅ View Insurance Pool (Admin)
+router.get("/admin/insurance", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const pool = await prisma.insurancePool.findMany();
+    res.json(pool);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
 /**
  * ======================
- * Payments APIs
+ * PAYMENT APIs
  * ======================
  */
 
-// POST /api/bookings/pay
-router.post("/pay", authenticateToken, async (req: AuthRequest, res: Response) => {
+// ✅ Create Payment (Razorpay + DB entry)
+router.post("/pay", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
     const { bookingid, userid, amount, insurancefee = 0, platformfee = 0 } = req.body;
-
     if (!bookingid || !userid || !amount) {
-      return res
-        .status(400)
-        .json({ error: "bookingid, userid and amount are required" });
+      return res.status(400).json({ error: "bookingid, userid and amount are required" });
     }
 
     const order = await razorpay.orders.create({
@@ -218,19 +186,17 @@ router.post("/pay", authenticateToken, async (req: AuthRequest, res: Response) =
     return res.json({ message: "Payment created", payment, razorpayOrder: order });
   } catch (err: any) {
     console.error("Payment create error:", err);
-    return res
-      .status(500)
-      .json({ error: "Payment failed", details: err.message });
+    return res.status(500).json({ error: "Payment failed", details: err.message });
   }
 });
 
-// POST /api/bookings/pay/confirm
-router.post("/pay/confirm", authenticateToken, async (req: AuthRequest, res: Response) => {
+// ✅ Confirm Payment (Verify Signature)
+router.post("/pay/confirm", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
 
     const { paymentId, razorpaypaymentid, razorpayorderid, signature } = req.body;
-
     if (!razorpayorderid || !razorpaypaymentid || !signature) {
       return res.status(400).json({
         error: "razorpayorderid, razorpaypaymentid and signature are required",
@@ -244,9 +210,7 @@ router.post("/pay/confirm", authenticateToken, async (req: AuthRequest, res: Res
       .digest("hex");
 
     if (signature !== expectedSign) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Payment verification failed" });
+      return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
     const updated = await prisma.payment.update({
@@ -264,71 +228,51 @@ router.post("/pay/confirm", authenticateToken, async (req: AuthRequest, res: Res
     const item = booking?.item;
     const amount = updated.amount;
 
-    if (renter?.email) {
-      try {
-        await sendEmail(
-          renter.email,
-          "✅ Payment Received",
-          `<p>Your payment of ₹${amount} for ${item?.title} has been received.</p>`
-        );
-      } catch {}
-    }
+    // 🔔 Send Email Notifications
+    if (renter?.email)
+      await sendEmail(
+        renter.email,
+        "✅ Payment Received",
+        `<p>Your payment of ₹${amount} for ${item?.title} has been received.</p>`
+      );
 
-    if (owner?.email) {
-      try {
-        await sendEmail(
-          owner.email,
-          "📢 Payment Completed",
-          `<p>You received a payment of ₹${amount} for your item ${item?.title}.</p>`
-        );
-      } catch {}
-    }
+    if (owner?.email)
+      await sendEmail(
+        owner.email,
+        "📢 Payment Completed",
+        `<p>You received a payment of ₹${amount} for your item ${item?.title}.</p>`
+      );
 
-    if (renter?.phone) {
-      try {
-        await sendSMS(
-          renter.phone,
-          `✅ Payment of ₹${amount} received for booking ${booking?.id}`
-        );
-      } catch {}
-    }
-
-    if (owner?.phone) {
-      try {
-        await sendSMS(
-          owner.phone,
-          `📢 Payment of ₹${amount} completed for your item ${item?.title}`
-        );
-      } catch {}
-    }
+    // 📱 Send SMS Notifications
+    if (renter?.phone)
+      await sendSMS(renter.phone, `✅ Payment of ₹${amount} received for booking ${booking?.id}`);
+    if (owner?.phone)
+      await sendSMS(owner.phone, `📢 Payment of ₹${amount} completed for your item ${item?.title}`);
 
     return res.json({
       success: true,
-      message: "Payment verified & updated",
+      message: "Payment verified & updated successfully",
       payment: updated,
     });
   } catch (err: any) {
     console.error("Payment confirm error:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to confirm payment", details: err.message });
+    return res.status(500).json({ error: "Failed to confirm payment", details: err.message });
   }
 });
 
-// GET /api/bookings/pay
+// ✅ Get All Payments
 router.get("/pay", async (_req: Request, res: Response) => {
   try {
     const payments = await prisma.payment.findMany({
       include: { booking: true, user: true },
-      orderBy: { createdAt: "desc" }, // ✅ FIXED camelCase
+      orderBy: { createdAt: "desc" },
     });
     return res.json(payments);
   } catch (err: any) {
     console.error("Payment fetch error:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to fetch payments", details: err.message });
+    return res.status(500).json({ error: "Failed to fetch payments", details: err.message });
   }
 });
 
 export default router;
+
