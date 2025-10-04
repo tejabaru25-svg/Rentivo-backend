@@ -20,7 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "body-parser": "^1.20.3",
     "multer": "^1.4.5-lts.2",
-    "razorpay": "^2.10.0",
+    "razorpay": "^2.9.2",
     "firebase-admin": "^12.6.0",
     "twilio": "^5.3.2",
     "nodemailer": "^6.9.15",
@@ -39,7 +39,3 @@
     "@types/multer": "^1.4.11"
   }
 }
-
-
-
-
