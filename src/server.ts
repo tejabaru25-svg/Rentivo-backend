@@ -18,10 +18,10 @@ import passwordRoutes from "./routes/password";
 import authenticateToken from "./authMiddleware";
 
 // ✅ Home + User routes
-import userRoutes from "./routes/user";           // Location (city/state)
+import userRoutes from "./routes/user";           // Location APIs (city/state)
 import homeRoutes from "./routes/home";           // 🏠 Home Page data (Top Searches, Recommendations)
 
-// ✅ NEW: Rentivo AI Support Assistant
+// ✅ Rentivo AI Support Assistant
 import rentivoAIRoutes from "./routes/rentivoAI"; // 🤖 Rentivo AI assistant backend
 
 const app = express();
@@ -33,7 +33,7 @@ const app = express();
  */
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*", // ⚠️ Allow all origins temporarily
+    origin: process.env.FRONTEND_URL || "*", // ⚠️ Allow all origins temporarily — restrict later in production
     credentials: true,
   })
 );
@@ -45,12 +45,22 @@ app.use(express.json());
  * =====================
  */
 app.get("/", (_req: Request, res: Response) => {
-  return res.json({
+  return res.status(200).json({
     ok: true,
     service: "Rentivo Backend API",
     version: "1.0.0",
     environment: process.env.NODE_ENV || "development",
-    message: "✅ Rentivo backend is running successfully",
+    message: "✅ Rentivo backend is running successfully and connected to Supabase",
+    docs: {
+      auth: "/api/auth",
+      items: "/api/items",
+      bookings: "/api/bookings",
+      kyc: "/api/kyc",
+      issues: "/api/issues",
+      uploads: "/api/upload",
+      home: "/api/home",
+      rentivoAI: "/api/rentivo-ai",
+    },
   });
 });
 
@@ -77,7 +87,7 @@ app.use("/api/rentivo-ai", rentivoAIRoutes);     // 🤖 Rentivo AI Support Assi
  * =====================
  */
 app.get("/api/protected", authenticateToken, (req: Request, res: Response) => {
-  return res.json({
+  return res.status(200).json({
     message: "✅ You accessed a protected route successfully",
     user: (req as any).user,
   });
@@ -97,7 +107,7 @@ app.use("/api/upload", s3Direct);
  * =====================
  */
 app.get("/debug/env", (_req: Request, res: Response) => {
-  return res.json({
+  return res.status(200).json({
     AWS_REGION: process.env.AWS_REGION || "❌ not set",
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || "❌ not set",
     NODE_ENV: process.env.NODE_ENV || "❌ not set",
@@ -105,6 +115,7 @@ app.get("/debug/env", (_req: Request, res: Response) => {
     FRONTEND_URL: process.env.FRONTEND_URL || "❌ not set",
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? "✅ set" : "❌ missing",
     DATABASE_URL: process.env.DATABASE_URL ? "✅ set" : "❌ missing",
+    SUPABASE_STATUS: process.env.DATABASE_URL?.includes("supabase") ? "🟢 Connected to Supabase" : "⚪ Unknown",
   });
 });
 
@@ -122,5 +133,6 @@ app.listen(port, () => {
   console.log("🏠 Home page API → /api/home");
   console.log("📦 Uploads API → /api/upload/presign or /api/upload/direct");
   console.log("🤖 Rentivo AI assistant → /api/rentivo-ai");
-  console.log("📡 Supabase/PostgreSQL connected via Prisma ORM");
+  console.log("💳 Payment & Booking routes → /api/bookings");
+  console.log("📡 Connected to Supabase / PostgreSQL via Prisma ORM");
 });
