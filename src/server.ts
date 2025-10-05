@@ -9,7 +9,7 @@ import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
 import itemRoutes from "./routes/items";
-import bookingRoutes from "./routes/booking";     // bookings + payments
+import bookingRoutes from "./routes/booking";     // Bookings + Payments
 import kycRoutes from "./routes/kyc";
 import issueRoutes from "./routes/issues";
 import testRoutes from "./routes/test";
@@ -18,8 +18,8 @@ import passwordRoutes from "./routes/password";
 import authenticateToken from "./authMiddleware";
 
 // ✅ Home + User routes
-import userRoutes from "./routes/user";           // location API (city/state)
-import homeRoutes from "./routes/home";           // 🏠 Home Page API (top searches, recommendations)
+import userRoutes from "./routes/user";           // Location (city/state)
+import homeRoutes from "./routes/home";           // 🏠 Home Page data (Top Searches, Recommendations)
 
 // ✅ NEW: Rentivo AI Support Assistant
 import rentivoAIRoutes from "./routes/rentivoAI"; // 🤖 Rentivo AI assistant backend
@@ -33,7 +33,7 @@ const app = express();
  */
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*", // ⚠️ Allow all for now — restrict in production
+    origin: process.env.FRONTEND_URL || "*", // ⚠️ Allow all origins temporarily
     credentials: true,
   })
 );
@@ -41,15 +41,16 @@ app.use(express.json());
 
 /**
  * =====================
- * Health Check
+ * Health Check Endpoint
  * =====================
  */
 app.get("/", (_req: Request, res: Response) => {
   return res.json({
     ok: true,
-    service: "Rentivo Backend",
+    service: "Rentivo Backend API",
     version: "1.0.0",
     environment: process.env.NODE_ENV || "development",
+    message: "✅ Rentivo backend is running successfully",
   });
 });
 
@@ -61,14 +62,14 @@ app.get("/", (_req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", passwordRoutes);            // Forgot/reset password
 app.use("/api/items", itemRoutes);
-app.use("/api/bookings", bookingRoutes);         // Bookings + payments
+app.use("/api/bookings", bookingRoutes);         // Bookings + Payments
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/devices", authenticateToken, devicesRouter);
 app.use("/api/user", userRoutes);                // User location endpoints
-app.use("/api/home", homeRoutes);                // 🏠 Home page data (top searches, recommendations)
-app.use("/api/rentivo-ai", rentivoAIRoutes);     // 🤖 Rentivo AI Assistant API
+app.use("/api/home", homeRoutes);                // 🏠 Home Page data (Top Searches, Recommendations)
+app.use("/api/rentivo-ai", rentivoAIRoutes);     // 🤖 Rentivo AI Support Assistant
 
 /**
  * =====================
@@ -77,7 +78,7 @@ app.use("/api/rentivo-ai", rentivoAIRoutes);     // 🤖 Rentivo AI Assistant AP
  */
 app.get("/api/protected", authenticateToken, (req: Request, res: Response) => {
   return res.json({
-    message: "You accessed a protected route!",
+    message: "✅ You accessed a protected route successfully",
     user: (req as any).user,
   });
 });
@@ -97,11 +98,11 @@ app.use("/api/upload", s3Direct);
  */
 app.get("/debug/env", (_req: Request, res: Response) => {
   return res.json({
-    AWS_REGION: process.env.AWS_REGION || null,
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || null,
-    NODE_ENV: process.env.NODE_ENV || "not set",
-    PORT: process.env.PORT || "not set",
-    FRONTEND_URL: process.env.FRONTEND_URL || "not set",
+    AWS_REGION: process.env.AWS_REGION || "❌ not set",
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET || "❌ not set",
+    NODE_ENV: process.env.NODE_ENV || "❌ not set",
+    PORT: process.env.PORT || "❌ not set",
+    FRONTEND_URL: process.env.FRONTEND_URL || "❌ not set",
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID ? "✅ set" : "❌ missing",
     DATABASE_URL: process.env.DATABASE_URL ? "✅ set" : "❌ missing",
   });
@@ -109,7 +110,7 @@ app.get("/debug/env", (_req: Request, res: Response) => {
 
 /**
  * =====================
- * Start Server
+ * Server Start
  * =====================
  */
 const port = process.env.PORT || 4000;
@@ -117,8 +118,9 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log("✅ Rentivo backend started successfully");
   console.log(`🚀 Listening on port: ${port}`);
-  console.log("🌍 Health check available at /");
-  console.log("🏠 Home API available at /api/home");
-  console.log("🤖 Rentivo AI available at /api/rentivo-ai");
-  console.log("📦 Supabase/Postgres connected via Prisma ORM");
+  console.log("🌍 Health check → /");
+  console.log("🏠 Home page API → /api/home");
+  console.log("📦 Uploads API → /api/upload/presign or /api/upload/direct");
+  console.log("🤖 Rentivo AI assistant → /api/rentivo-ai");
+  console.log("📡 Supabase/PostgreSQL connected via Prisma ORM");
 });
