@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 /**
  * @route GET /search?q=keyword
- * @desc Search listings by title, description, category, or location
+ * @desc Search items by title, description, category, or location
  * @access Public
  */
 router.get("/", async (req: AuthRequest, res: Response) => {
@@ -18,7 +18,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Search query is required" });
     }
 
-    const results = await prisma.listing.findMany({
+    const results = await prisma.item.findMany({
       where: {
         OR: [
           { title: { contains: query, mode: "insensitive" } },
@@ -27,9 +27,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
           { location: { contains: query, mode: "insensitive" } },
         ],
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         title: true,
@@ -50,3 +48,4 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 });
 
 export default router;
+
