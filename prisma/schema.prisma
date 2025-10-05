@@ -38,7 +38,7 @@ model User {
   messagesSent     ChatMessage[] @relation("MessagesSent")
   messagesReceived ChatMessage[] @relation("MessagesReceived")
   tickets          SupportTicket[]
-  aiqueries        AIQuery[]
+  aiqueries        AIQuery[]     @relation("UserAIQueries")
 }
 
 model UserDevice {
@@ -197,12 +197,13 @@ model TopSearch {
 model AIQuery {
   id         String   @id @default(uuid())
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  query      String
+  user       User?    @relation("UserAIQueries", fields: [userId], references: [id])
+  query      String   @unique
   response   String?
   needsHuman Boolean  @default(false)
   status     String   @default("open") // open | resolved | escalated
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
 
