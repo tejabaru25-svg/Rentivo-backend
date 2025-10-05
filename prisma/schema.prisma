@@ -193,6 +193,14 @@ model TopSearch {
   lastUsedAt  DateTime @default(now())
 }
 
-
-
-
+model AIQuery {
+  id         String   @id @default(uuid())
+  userId     String? 
+  user       User?    @relation(fields: [userId], references: [id])
+  query      String
+  response   String?
+  needsHuman Boolean  @default(false)
+  status     String   @default("open") // open | resolved | escalated
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
