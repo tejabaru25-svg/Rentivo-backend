@@ -1,4 +1,4 @@
-import express, { Response } from "express";
+import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AuthRequest } from "../authMiddleware";
 
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
  * @desc Search rentable items by title, description, category, or location
  * @access Public
  */
-router.get("/", async (req: AuthRequest, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const query = req.query.q as string;
 
@@ -18,7 +18,6 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Search query is required" });
     }
 
-    // 🔍 Case-insensitive keyword search across multiple columns
     const results = await prisma.item.findMany({
       where: {
         OR: [
@@ -27,7 +26,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
           { category: { contains: query, mode: "insensitive" } },
           { location: { contains: query, mode: "insensitive" } },
         ],
-        available: true, // Only show available items
+        available: true,
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -52,5 +51,3 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 });
 
 export default router;
-
-
