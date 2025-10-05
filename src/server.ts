@@ -4,7 +4,7 @@ dotenv.config();
 import express, { Request, Response } from "express";
 import cors from "cors";
 
-// ✅ Route imports
+// ✅ Core route imports
 import s3Presign from "./routes/s3Presign";
 import s3Direct from "./routes/s3Direct";
 import authRoutes from "./routes/auth";
@@ -17,9 +17,12 @@ import devicesRouter from "./routes/devices";
 import passwordRoutes from "./routes/password";
 import authenticateToken from "./authMiddleware";
 
-// ✅ New: Home Page + User-related routes
+// ✅ Home + User routes
 import userRoutes from "./routes/user";           // location API (city/state)
 import homeRoutes from "./routes/home";           // 🏠 Home Page API (top searches, recommendations)
+
+// ✅ NEW: Rentivo AI Support Assistant
+import rentivoAIRoutes from "./routes/rentivoAI"; // 🤖 Rentivo AI assistant backend
 
 const app = express();
 
@@ -30,7 +33,7 @@ const app = express();
  */
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*", // ⚠️ allow all for now — restrict in production
+    origin: process.env.FRONTEND_URL || "*", // ⚠️ Allow all for now — restrict in production
     credentials: true,
   })
 );
@@ -56,15 +59,16 @@ app.get("/", (_req: Request, res: Response) => {
  * =====================
  */
 app.use("/api/auth", authRoutes);
-app.use("/api/auth", passwordRoutes);          // forgot/reset password
+app.use("/api/auth", passwordRoutes);            // Forgot/reset password
 app.use("/api/items", itemRoutes);
-app.use("/api/bookings", bookingRoutes);       // bookings + payments
+app.use("/api/bookings", bookingRoutes);         // Bookings + payments
 app.use("/api/kyc", kycRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/devices", authenticateToken, devicesRouter);
-app.use("/api/user", userRoutes);              // user location endpoints
-app.use("/api/home", homeRoutes);              // 🏠 Home page data (top searches, recommendations)
+app.use("/api/user", userRoutes);                // User location endpoints
+app.use("/api/home", homeRoutes);                // 🏠 Home page data (top searches, recommendations)
+app.use("/api/rentivo-ai", rentivoAIRoutes);     // 🤖 Rentivo AI Assistant API
 
 /**
  * =====================
@@ -115,8 +119,6 @@ app.listen(port, () => {
   console.log(`🚀 Listening on port: ${port}`);
   console.log("🌍 Health check available at /");
   console.log("🏠 Home API available at /api/home");
-  console.log("📦 Render/Supabase DB connected via Prisma");
+  console.log("🤖 Rentivo AI available at /api/rentivo-ai");
+  console.log("📦 Supabase/Postgres connected via Prisma ORM");
 });
-
-
-
