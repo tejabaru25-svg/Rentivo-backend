@@ -1,133 +1,116 @@
 import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import authenticateToken, { AuthRequest } from "../authMiddleware";
+import stringSimilarity from "string-similarity";
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 /**
- * ============================================
- *  POST /api/rentivo-ai/ask
- *  User asks AI a question → returns AI reply
- * ============================================
+ * ======================
+ * Rentivo AI - FAQ Answering
+ * ======================
+ * Supports:
+ * - /api/rentivo-ai/ask  → user asks question
+ * - /api/rentivo-ai/load → admin loads all default FAQs
  */
-router.post("/ask", authenticateToken, async (req: Request, res: Response) => {
-  const authReq = req as AuthRequest;
 
+// 🔹 1️⃣ Load all predefined FAQs (admin use)
+router.post("/load", async (_req: Request, res: Response) => {
   try {
-    const { query } = req.body;
-
-    if (!query || typeof query !== "string") {
-      return res.status(400).json({ error: "Missing or invalid 'query' field" });
-    }
-
-    const userId = authReq.user?.id ?? null;
-
-    // 🧩 Simple placeholder logic for now
-    let response = "";
-    let needsHuman = false;
-
-    // Basic keyword detection logic
-    if (query.toLowerCase().includes("payment")) {
-      response = "💰 Please check your payment status in the Bookings section.";
-    } else if (query.toLowerCase().includes("kyc")) {
-      response = "🪪 You can upload your KYC documents in the profile section.";
-    } else if (query.toLowerCase().includes("refund")) {
-      response = "🔄 Refunds are processed within 5–7 business days.";
-    } else if (query.toLowerCase().includes("upload")) {
-      response = "📸 You can upload items in the Upload tab — step by step.";
-    } else if (query.toLowerCase().includes("book") || query.toLowerCase().includes("rent")) {
-      response = "📅 To book or rent, tap on an item and click 'Book Now'.";
-    } else {
-      response = "🤖 I’m forwarding your question to our Rentivo Specialist.";
-      needsHuman = true;
-    }
-
-    // Save to DB
-    const aiQuery = await prisma.aIQuery.create({
-      data: {
-        userId,
-        query,
-        response,
-        needsHuman,
-        status: needsHuman ? "escalated" : "resolved",
+    const faqs = [
+      {
+        question: "What is Rentivo?",
+        answer: "Rentivo is a rental marketplace where you can rent or list items like cameras, vehicles, electronics, and more — safely and easily.",
+        tags: ["home", "info"],
       },
+      {
+        question: "How do I upload an item for rent?",
+        answer: "Tap the “+ Upload” tab → Add 3–5 photos → Fill title, description, category, and price → Set availability → Submit.",
+        tags: ["upload", "listing"],
+      },
+      {
+        question: "How many photos can I upload?",
+        answer: "You can upload up to 5 photos per item.",
+        tags: ["upload", "photos"],
+      },
+      {
+        question: "How do I book an item?",
+        answer: "Go to the item page → select your dates → tap “Book Now” → complete payment securely with Razorpay.",
+        tags: ["booking", "rent"],
+      },
+      {
+        question: "Why do I need to complete KYC?",
+        answer: "KYC keeps transactions safe and builds trust between owners and renters.",
+        tags: ["kyc", "verification"],
+      },
+      {
+        question: "My item was damaged after a rental. What do I do?",
+        answer: "Owners can raise an issue after return → Rentivo Admin will compare before/after photos and decide.",
+        tags: ["issues", "damage"],
+      },
+      {
+        question: "Can I talk to a human?",
+        answer: "Yes. If Rentivo AI cannot solve your issue, it will escalate to a specialist who responds within 24 hours.",
+        tags: ["ai", "support"],
+      },
+    ];
+
+    await prisma.rentivoAI.createMany({
+      data: faqs,
+      skipDuplicates: true,
     });
 
-    return res.json({
-      message: "AI query processed successfully",
-      queryId: aiQuery.id,
-      response,
-      needsHuman,
-    });
+    return res.json({ message: "✅ Rentivo AI FAQs loaded successfully", count: faqs.length });
   } catch (err: any) {
-    console.error("AI query error:", err);
-    return res.status(500).json({
-      error: "Failed to process AI query",
-      details: err.message,
-    });
+    console.error("Load FAQs error:", err);
+    return res.status(500).json({ error: "Failed to load default FAQs", details: err.message });
   }
 });
 
-/**
- * ============================================
- *  GET /api/rentivo-ai/history
- *  Returns all past user AI interactions
- * ============================================
- */
-router.get("/history", authenticateToken, async (req: Request, res: Response) => {
-  const authReq = req as AuthRequest;
-
+// 🔹 2️⃣ Ask the AI endpoint
+router.post("/ask", async (req: Request, res: Response) => {
   try {
-    if (!authReq.user) return res.status(401).json({ error: "Unauthorized" });
+    const { question } = req.body;
 
-    const history = await prisma.aIQuery.findMany({
-      where: { userId: authReq.user.id },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return res.json({
-      message: "AI chat history fetched successfully",
-      history,
-    });
-  } catch (err: any) {
-    console.error("Fetch AI history error:", err);
-    return res.status(500).json({
-      error: "Failed to fetch AI history",
-      details: err.message,
-    });
-  }
-});
-
-/**
- * ============================================
- *  GET /api/rentivo-ai/all (Admin only)
- *  View all AI queries (for monitoring)
- * ============================================
- */
-router.get("/all", authenticateToken, async (req: Request, res: Response) => {
-  const authReq = req as AuthRequest;
-
-  try {
-    if (authReq.user?.role !== "ADMIN") {
-      return res.status(403).json({ error: "Access denied" });
+    if (!question) {
+      return res.status(400).json({ error: "Question is required" });
     }
 
-    const allQueries = await prisma.aIQuery.findMany({
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+    // Fetch all stored FAQs
+    const faqs = await prisma.rentivoAI.findMany();
 
-    return res.json({
-      message: "All AI queries fetched successfully",
-      data: allQueries,
-    });
+    if (faqs.length === 0) {
+      return res.json({
+        message: "AI database is empty. Please run /api/rentivo-ai/load first.",
+      });
+    }
+
+    // Compare similarity
+    const allQuestions = faqs.map((faq) => faq.question);
+    const matches = stringSimilarity.findBestMatch(question, allQuestions);
+    const bestMatch = faqs[matches.bestMatchIndex];
+
+    // Confidence score
+    const confidence = matches.bestMatch.rating;
+
+    if (confidence > 0.5) {
+      return res.json({
+        success: true,
+        confidence: confidence.toFixed(2),
+        answer: bestMatch.answer,
+        sourceQuestion: bestMatch.question,
+      });
+    } else {
+      return res.json({
+        success: false,
+        confidence: confidence.toFixed(2),
+        message:
+          "I'm not fully sure about this question. Transferring to a Rentivo specialist for review.",
+      });
+    }
   } catch (err: any) {
-    console.error("Admin AI query fetch error:", err);
-    return res.status(500).json({
-      error: "Failed to fetch AI queries",
-      details: err.message,
-    });
+    console.error("AI ask error:", err);
+    return res.status(500).json({ error: "AI query failed", details: err.message });
   }
 });
 
