@@ -18,7 +18,7 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
 
-    // ✅ 1️⃣ Get user's location if logged in
+    // 1️⃣ Get user's location if logged in
     const user = authReq.user
       ? await prisma.user.findUnique({
           where: { id: authReq.user.id },
@@ -26,22 +26,24 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
         })
       : null;
 
-    // ✅ 2️⃣ Top Searches (using searchCount)
+    // 2️⃣ Top Searches
     const topSearches = await prisma.topSearch.findMany({
       orderBy: { searchCount: "desc" },
       take: 6,
     });
 
-    // ✅ 3️⃣ Recommendations (based on user city/state)
-    let recommendations = [];
+    // 3️⃣ Recommendations (explicitly typed)
+    let recommendations: any[] = [];
+
     if (user?.city || user?.state) {
+      const filters: any[] = [];
+      if (user.city)
+        filters.push({ location: { contains: user.city, mode: "insensitive" } });
+      if (user.state)
+        filters.push({ location: { contains: user.state, mode: "insensitive" } });
+
       recommendations = await prisma.item.findMany({
-        where: {
-          OR: [
-            user.city ? { location: { contains: user.city, mode: "insensitive" } } : undefined,
-            user.state ? { location: { contains: user.state, mode: "insensitive" } } : undefined,
-          ].filter(Boolean) as any, // ✅ removes undefined safely
-        },
+        where: { OR: filters },
         orderBy: { createdAt: "desc" },
         take: 8,
       });
@@ -52,8 +54,8 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ 4️⃣ Recently added items
-    const recentItems = await prisma.item.findMany({
+    // 4️⃣ Recently added items (explicitly typed)
+    const recentItems: any[] = await prisma.item.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
     });
@@ -75,6 +77,7 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
 });
 
 export default router;
+
 
 
 
