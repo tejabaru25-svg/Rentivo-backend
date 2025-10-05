@@ -7,53 +7,40 @@ const prisma = new PrismaClient();
 
 /**
  * ======================
- * Get Home Page Data
+ * HOME PAGE BACKEND
  * ======================
  * Returns:
- * - Top 6 searched terms
- * - Recommended items (based on user location)
+ * - Top searched items
+ * - Recommendations (based on location)
  * - Recently added items
  */
 router.get("/", authenticateToken, async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
 
-    // ✅ get user info for recommendations
+    // ✅ 1️⃣ Get user's location if logged in
     const user = authReq.user
       ? await prisma.user.findUnique({
           where: { id: authReq.user.id },
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-            latitude: true,
-            longitude: true,
-          },
+          select: { city: true, state: true, latitude: true, longitude: true },
         })
       : null;
 
-    /**
-     * 🔹 1. Top Searches
-     * Sorted by "count" column (defined in schema)
-     */
+    // ✅ 2️⃣ Top Searches (using searchCount)
     const topSearches = await prisma.topSearch.findMany({
-      orderBy: { count: "desc" as any }, // ✅ fix type mismatch
+      orderBy: { searchCount: "desc" },
       take: 6,
     });
 
-    /**
-     * 🔹 2. Recommendations (based on location)
-     */
-    let recommendations: any[] = [];
-
+    // ✅ 3️⃣ Recommendations (based on user city/state)
+    let recommendations = [];
     if (user?.city || user?.state) {
       recommendations = await prisma.item.findMany({
         where: {
           OR: [
-            user?.city ? { location: { contains: user.city, mode: "insensitive" } } : undefined,
-            user?.state ? { location: { contains: user.state, mode: "insensitive" } } : undefined,
-          ].filter(Boolean) as any, // ✅ Prisma type-safe filter fix
+            user.city ? { location: { contains: user.city, mode: "insensitive" } } : undefined,
+            user.state ? { location: { contains: user.state, mode: "insensitive" } } : undefined,
+          ].filter(Boolean) as any, // ✅ removes undefined safely
         },
         orderBy: { createdAt: "desc" },
         take: 8,
@@ -65,9 +52,7 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    /**
-     * 🔹 3. Recently Added Items
-     */
+    // ✅ 4️⃣ Recently added items
     const recentItems = await prisma.item.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -75,15 +60,13 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
 
     return res.json({
       message: "Home page data fetched successfully",
-      userLocation: user
-        ? { city: user.city, state: user.state, latitude: user.latitude, longitude: user.longitude }
-        : null,
       topSearches,
       recommendations,
       recentItems,
+      userLocation: user ? { city: user.city, state: user.state } : null,
     });
   } catch (err: any) {
-    console.error("🏠 Home page fetch error:", err);
+    console.error("Home page fetch error:", err);
     return res.status(500).json({
       error: "Failed to fetch home page data",
       details: err.message,
@@ -92,6 +75,7 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
 });
 
 export default router;
+
 
 
 
