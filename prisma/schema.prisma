@@ -38,6 +38,7 @@ model User {
   messagesSent     ChatMessage[] @relation("MessagesSent")
   messagesReceived ChatMessage[] @relation("MessagesReceived")
   tickets          SupportTicket[]
+  aiqueries        AIQuery[]
 }
 
 model UserDevice {
@@ -195,7 +196,7 @@ model TopSearch {
 
 model AIQuery {
   id         String   @id @default(uuid())
-  userId     String? 
+  userId     String?
   user       User?    @relation(fields: [userId], references: [id])
   query      String
   response   String?
@@ -204,3 +205,4 @@ model AIQuery {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
