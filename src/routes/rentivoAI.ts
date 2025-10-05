@@ -6,112 +6,111 @@ import authenticateToken, { AuthRequest } from "../authMiddleware";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// ✅ Rentivo AI Question Base (33 Questions)
-const knowledgeBase: Record<string, string> = {
-  "how to list my item": "Go to Upload → Add photos → Enter details → Set price → Review → Publish.",
-  "how to delete my listing": "Open your profile, go to 'My Listings', tap the item, and choose Delete.",
-  "how to edit my item": "Open 'My Listings', select the item, and click 'Edit Item'.",
-  "what is kyc": "KYC means verifying your identity using PAN and Aadhaar for security.",
-  "how to verify my kyc": "Go to Profile → KYC Verification → Upload your PAN and Aadhaar images.",
-  "how long does kyc take": "KYC approval usually takes 24–48 hours.",
-  "how to book an item": "Open an item page, choose dates, and tap Book Now.",
-  "how to cancel a booking": "Go to My Bookings → Select booking → Cancel.",
-  "how do refunds work": "Refunds are processed to your source account within 5–7 days.",
-  "what if the item is damaged": "The owner raises an issue with pre and post-trip photos. Admin reviews and resolves.",
-  "how to raise an issue": "Only owners can raise an issue after return via the Issue Center.",
-  "how to contact support": "Go to Profile → Help → Create Ticket or use Rentivo AI chat.",
-  "can renters raise issues": "No, only owners can raise issues after return if damage is found.",
-  "how to withdraw money": "Once rental is complete, your earnings are auto-deposited in 2–3 days.",
-  "is payment secure": "Yes. Payments are handled by Razorpay with encryption.",
-  "can i chat with renter": "Yes, chat is available once booking is confirmed.",
-  "how to upload more than 1 photo": "You can upload up to 5 photos during listing creation.",
-  "how to set item availability": "In upload step 3, set start and end dates for availability.",
-  "how to extend booking": "Go to My Bookings → Select booking → Extend Date.",
-  "what happens after booking ends": "Owner confirms return → system verifies → payment released.",
-  "what if renter doesn't return": "Admin intervenes via issue center and compares photos.",
-  "how to reset password": "Go to Login → Forgot Password → Enter email → Reset link sent.",
-  "how to change phone number": "Currently not supported. Contact support for manual update.",
-  "how to report a bug": "Go to Profile → Help → Report Issue.",
-  "how to check my earnings": "Go to Profile → My Earnings → Overview tab.",
-  "can i rent my vehicle": "Yes, if it meets platform guidelines and is verified.",
-  "is insurance included": "Yes. Rentivo provides damage coverage via insurance pool.",
-  "how to view booking history": "Go to My Bookings → Past tab.",
-  "how to see upcoming bookings": "Go to My Bookings → Upcoming tab.",
-  "how to verify renter": "Renter KYC is auto-verified by admin before booking.",
-  "how to upload documents": "Go to KYC Section → Upload PAN & Aadhaar → Submit.",
-  "how to delete account": "Contact support via ticket → Request account deletion.",
-  "how to contact admin": "Go to Help → Contact Admin or type your issue here."
-};
+// 🧠 Knowledge base — 33 common Rentivo Q&A pairs
+const FAQ_DATA = [
+  { q: "how to upload an item", a: "Go to Upload Tab → Add 3–5 photos → Enter item details → Set price & availability → Review & submit." },
+  { q: "how to book an item", a: "Browse or search → Select an item → Choose start & end dates → Confirm & pay securely via Razorpay." },
+  { q: "how to cancel a booking", a: "You can cancel a booking before handover through your bookings section. Refunds depend on owner policy." },
+  { q: "how to verify kyc", a: "Upload your PAN & Aadhaar (front/back) on the KYC page. Verification usually takes 24–48 hours." },
+  { q: "what if the item is damaged", a: "After return, the owner can raise an issue. Our admin compares pre/post trip photos and resolves it." },
+  { q: "how does rentivo insurance work", a: "Each booking includes a small insurance fee that goes into the insurance pool to cover damages." },
+  { q: "how to withdraw earnings", a: "Owners can withdraw available earnings after booking completion. Transfer to your verified bank account." },
+  { q: "can i list multiple items", a: "Yes! You can list multiple items across different categories with unique titles and images." },
+  { q: "what is platform fee", a: "A small service fee charged by Rentivo for each booking to maintain platform operations." },
+  { q: "how to contact support", a: "You can contact support via the Help section or by raising a ticket in your Rentivo account." },
+  { q: "how long does kyc take", a: "KYC verification typically takes between 24 and 48 hours." },
+  { q: "can renters raise issues", a: "Only owners can raise damage issues after item return. Renters can contact support if needed." },
+  { q: "what are the payment methods", a: "Payments are processed securely via Razorpay — UPI, credit/debit cards, and wallets supported." },
+  { q: "can i extend a booking", a: "Yes, renters can request to extend a booking if the item is still available for those dates." },
+  { q: "what is the refund policy", a: "Refunds depend on cancellation timing and owner policy. Insurance and platform fees are non-refundable." },
+  { q: "is my data safe", a: "Yes! Rentivo uses AWS S3, encrypted connections, and secure payments via Razorpay." },
+  { q: "how to reset password", a: "Click 'Forgot Password' on login → Check email → Follow the reset link to set a new password." },
+  { q: "how to change phone number", a: "Edit your phone number from your profile page. Verification via OTP may be required." },
+  { q: "how to change email", a: "Edit your email in your account settings. We’ll verify the new email via OTP." },
+  { q: "how to delete account", a: "You can request account deletion from the Profile → Settings → Delete Account section." },
+  { q: "how to become verified owner", a: "Complete your KYC and maintain good ratings for verified owner badge." },
+  { q: "how to track my booking", a: "All bookings are visible in your Bookings tab with live status updates." },
+  { q: "can i message owner", a: "Yes, you can message the owner directly once a booking request is made." },
+  { q: "how to edit my item details", a: "Go to My Listings → Edit → Update title, price, availability, or photos." },
+  { q: "how to pause item listing", a: "You can toggle 'available' off in My Listings to hide the item temporarily." },
+  { q: "how to view my earnings", a: "Owners can view total and pending earnings in the Earnings tab." },
+  { q: "does rentivo charge commission", a: "Yes, a small platform fee per booking — displayed before you confirm." },
+  { q: "how to report a problem", a: "Use 'Raise Issue' after return or contact support for help anytime." },
+  { q: "is there customer care number", a: "Support is primarily handled via chat and support tickets." },
+  { q: "can i use rentivo internationally", a: "Currently Rentivo operates within India, expansion is planned soon." },
+  { q: "what is rentivo", a: "Rentivo is a peer-to-peer rental platform to rent and lend items safely." },
+  { q: "how does rentivo ai help", a: "Rentivo AI instantly answers questions. If it can’t, it escalates to a human specialist." },
+  { q: "what is insurance pool", a: "The insurance pool collects small fees to cover item damage during rentals." }
+];
 
-// ✅ Helper: Find the best matching answer
-function getAnswer(question: string): { answer: string; confidence: number } {
-  const keys = Object.keys(knowledgeBase);
-  const { bestMatch } = stringSimilarity.findBestMatch(question.toLowerCase(), keys);
-  const best = bestMatch.target;
-  return { answer: knowledgeBase[best], confidence: bestMatch.rating };
-}
-
-/**
- * POST /api/rentivo-ai/ask
- * Ask a question to Rentivo AI
- */
-router.post("/ask", authenticateToken, async (req: Request, res: Response) => {
+// 🤖 POST /api/rentivo-ai
+router.post("/", authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
-  const { question } = req.body;
-
-  if (!question) {
-    return res.status(400).json({ error: "Question is required" });
-  }
 
   try {
-    // Check if answered before
-    const cached = await prisma.aiQuery.findUnique({ where: { query: question } });
-    if (cached && cached.response) {
-      return res.json({
-        message: "✅ Cached Answer",
-        answer: cached.response,
-        fromCache: true,
-      });
-    }
+    const user = authReq.user;
+    const { query } = req.body;
 
-    // Find best match
-    const { answer, confidence } = getAnswer(question);
+    if (!query) return res.status(400).json({ error: "Missing 'query' field" });
+
+    // Find best matching question
+    const allQuestions = FAQ_DATA.map(f => f.q);
+    const match = stringSimilarity.findBestMatch(query.toLowerCase(), allQuestions);
+    const bestMatch = FAQ_DATA[match.bestMatchIndex];
+    const confidence = match.bestMatch.rating;
 
     let responseText: string;
     let needsHuman = false;
 
-    if (confidence >= 0.65) {
-      responseText = answer;
+    if (confidence > 0.45) {
+      responseText = bestMatch.a;
     } else {
-      responseText =
-        "I'm not entirely sure. I'll forward this to a Rentivo specialist for review.";
+      responseText = "I'm not sure about that. I’ll forward your query to a Rentivo specialist.";
       needsHuman = true;
     }
 
-    // Store query
-    await prisma.aiQuery.create({
+    // Save to DB
+    await prisma.aIQuery.create({
       data: {
-        query: question,
+        userId: user?.id || null,
+        query,
         response: responseText,
-        userId: authReq.user?.id,
         needsHuman,
+        status: needsHuman ? "escalated" : "resolved",
       },
     });
 
     return res.json({
-      message: "🤖 Rentivo AI Response",
-      answer: responseText,
+      success: true,
+      message: "Response generated successfully",
       confidence,
-      needsHuman,
+      response: responseText,
+      forwarded: needsHuman,
     });
   } catch (err: any) {
-    console.error("AI query error:", err);
-    return res.status(500).json({
-      error: "AI query failed",
-      details: err.message,
+    console.error("Rentivo AI error:", err);
+    return res.status(500).json({ error: "Internal error", details: err.message });
+  }
+});
+
+// 🧾 GET /api/rentivo-ai/history
+router.get("/history", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+
+  try {
+    const queries = await prisma.aIQuery.findMany({
+      where: { userId: authReq.user?.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     });
+
+    return res.json({ success: true, queries });
+  } catch (err: any) {
+    console.error("AI history error:", err);
+    return res.status(500).json({ error: "Failed to fetch AI history", details: err.message });
   }
 });
 
 export default router;
+
 
